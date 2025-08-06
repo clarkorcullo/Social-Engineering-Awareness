@@ -329,10 +329,10 @@
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <div class="container" style="margin-top: 80px; margin-bottom: 20px;">
-                {% set displayed_messages = [] %}
+                {% set message_shown = false %}
                 {% for message in messages %}
-                    {% if message not in displayed_messages %}
-                        {% set _ = displayed_messages.append(message) %}
+                    {% if not message_shown %}
+                        {% set message_shown = true %}
                         {% if 'Registration successful' in message or 'successful' in message or 'Welcome' in message %}
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
                                 <i class="fas fa-check-circle me-2"></i><span class="icon-fallback icon-check-circle me-2"></span>
