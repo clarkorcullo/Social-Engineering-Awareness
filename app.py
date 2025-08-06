@@ -19,13 +19,8 @@ else:
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# CSRF Protection
-csrf = CSRFProtect(app)
-
-# Ensure CSRF token is available in all templates
-@app.context_processor
-def inject_csrf_token():
-    return dict(csrf_token=generate_csrf())
+# CSRF Protection - temporarily disabled
+# csrf = CSRFProtect(app)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
