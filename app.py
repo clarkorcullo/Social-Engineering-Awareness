@@ -62,6 +62,28 @@ def profile():
     except Exception as e:
         return f"Error loading profile: {str(e)}"
 
+@app.route('/module/<int:module_id>')
+@login_required
+def module(module_id):
+    try:
+        # For now, just show a simple module page
+        module_names = {
+            1: "Introduction to Social Engineering",
+            2: "Types of Social Engineering Attacks", 
+            3: "Phishing Attacks",
+            4: "Pretexting and Impersonation",
+            5: "Baiting and Quid Pro Quo",
+            6: "Advanced Techniques",
+            7: "Incident Response",
+            8: "Final Assessment"
+        }
+        
+        module_name = module_names.get(module_id, f"Module {module_id}")
+        
+        return render_template('module_simple.html', module_id=module_id, module_name=module_name)
+    except Exception as e:
+        return f"Error loading module: {str(e)}"
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     try:
