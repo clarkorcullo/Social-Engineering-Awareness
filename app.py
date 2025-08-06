@@ -140,7 +140,7 @@ def logout():
 @login_required
 def dashboard():
     try:
-        return render_template('dashboard_simple.html')
+        return render_template('dashboard.html')
     except Exception as e:
         return f"Error loading dashboard: {str(e)}"
 
