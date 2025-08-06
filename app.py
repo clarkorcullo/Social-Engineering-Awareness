@@ -26,20 +26,7 @@ else:
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize database on app startup
-with app.app_context():
-    try:
-        db.create_all()
-        print("Database initialized successfully")
-    except Exception as e:
-        print(f"Database initialization error: {e}")
-        # Try to recreate tables
-        try:
-            db.drop_all()
-            db.create_all()
-            print("Database tables recreated successfully")
-        except Exception as e2:
-            print(f"Failed to recreate database: {e2}")
+
 
 # Security configurations
 app.config['WTF_CSRF_ENABLED'] = True
@@ -1088,23 +1075,26 @@ def calculate_behavioral_score(responses):
 # Initialize database
 def init_db():
     with app.app_context():
-        # Create all tables
-        db.create_all()
-        
-        # Verify tables exist by checking if User table has any columns
         try:
-            # This will fail if the table doesn't exist
-            User.query.first()
-        except Exception as e:
-            print(f"Database initialization error: {e}")
-            # Recreate all tables
-            db.drop_all()
+            # Create all tables
             db.create_all()
-            print("Database tables recreated successfully")
-        
-        # Create default modules if they don't exist
-        if not Module.query.first():
-            modules = [
+            print("Database tables created successfully")
+            
+            # Verify tables exist by checking if User table has any columns
+            try:
+                # This will fail if the table doesn't exist
+                User.query.first()
+                print("Database verification successful")
+            except Exception as e:
+                print(f"Database verification error: {e}")
+                # Recreate all tables
+                db.drop_all()
+                db.create_all()
+                print("Database tables recreated successfully")
+            
+            # Create default modules if they don't exist
+            if not Module.query.first():
+                modules = [
                 {
                     'name': 'Introduction to Social Engineering',
                     'description': 'Understanding human vulnerabilities and psychological manipulation',
@@ -1461,6 +1451,8 @@ def init_db():
                 db.session.add(module)
             
             db.session.commit()
+        except Exception as e:
+            print(f"Database initialization error: {e}")
 
 if __name__ == '__main__':
     # Initialize database
