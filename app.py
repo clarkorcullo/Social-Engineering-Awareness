@@ -139,7 +139,10 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    try:
+        return render_template('dashboard_simple.html')
+    except Exception as e:
+        return f"Error loading dashboard: {str(e)}"
 
 @app.route('/test')
 def test():
