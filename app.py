@@ -108,6 +108,23 @@ def final_assessment():
     except Exception as e:
         return f"Error loading final assessment: {str(e)}"
 
+@app.route('/simulation/<simulation_type>')
+@login_required
+def simulation(simulation_type):
+    try:
+        simulation_names = {
+            'phishing': 'Phishing Simulation',
+            'pretexting': 'Pretexting Simulation',
+            'baiting': 'Baiting Simulation',
+            'quid_pro_quo': 'Quid Pro Quo Simulation'
+        }
+        
+        simulation_name = simulation_names.get(simulation_type, f'{simulation_type.title()} Simulation')
+        
+        return render_template('simulation_simple.html', simulation_type=simulation_type, simulation_name=simulation_name)
+    except Exception as e:
+        return f"Error loading simulation: {str(e)}"
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     try:

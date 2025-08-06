@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ simulation_name }} - Social Engineering Awareness{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-lg">
+                <div class="card-body text-center">
+                    <h1 class="card-title">{{ simulation_name }}</h1>
+                    <p class="card-text">Interactive simulation to test your awareness</p>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Simulation Features</h6>
+                        <p>Realistic scenarios, interactive choices, and immediate feedback will be available soon.</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-play-circle"></i> What You'll Learn</h5>
+                                    <ul class="text-start">
+                                        <li>Identify social engineering attempts</li>
+                                        <li>Practice safe responses</li>
+                                        <li>Understand attack techniques</li>
+                                        <li>Build awareness skills</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-shield-alt"></i> Safety Features</h5>
+                                    <ul class="text-start">
+                                        <li>Safe learning environment</li>
+                                        <li>No real threats</li>
+                                        <li>Immediate feedback</li>
+                                        <li>Progress tracking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
