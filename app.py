@@ -84,6 +84,30 @@ def module(module_id):
     except Exception as e:
         return f"Error loading module: {str(e)}"
 
+@app.route('/assessment/<assessment_type>')
+@login_required
+def assessment(assessment_type):
+    try:
+        assessment_names = {
+            'baseline': 'Baseline Assessment',
+            'post': 'Post-Assessment',
+            'followup': 'Follow-up Assessment'
+        }
+        
+        assessment_name = assessment_names.get(assessment_type, f'{assessment_type.title()} Assessment')
+        
+        return render_template('assessment_simple.html', assessment_type=assessment_type, assessment_name=assessment_name)
+    except Exception as e:
+        return f"Error loading assessment: {str(e)}"
+
+@app.route('/final_assessment')
+@login_required
+def final_assessment():
+    try:
+        return render_template('final_assessment_simple.html')
+    except Exception as e:
+        return f"Error loading final assessment: {str(e)}"
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     try:
