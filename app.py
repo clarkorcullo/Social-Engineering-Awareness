@@ -140,7 +140,13 @@ def logout():
 @login_required
 def dashboard():
     try:
-        return render_template('dashboard.html')
+        # Provide default values for the dashboard template
+        dashboard_data = {
+            'completed_modules': 0,
+            'total_score': 0,
+            'average_score': 0
+        }
+        return render_template('dashboard.html', **dashboard_data)
     except Exception as e:
         return f"Error loading dashboard: {str(e)}"
 
