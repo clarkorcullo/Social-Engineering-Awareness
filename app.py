@@ -227,20 +227,30 @@ def test():
 def health():
     return {"status": "healthy", "message": "App is running"}
 
-# Initialize database
+# Initialize database with migration support
 with app.app_context():
     try:
-        db.create_all()
-        print("Database initialized successfully")
-    except Exception as e:
-        print(f"Database initialization error: {e}")
-        # Try to recreate tables
-        try:
-            db.drop_all()
+        # Import migration system
+        from migrations import safe_init_db
+        
+        # Try to migrate existing database
+        if not safe_init_db():
+            # If migration failed or no existing database, create new one
             db.create_all()
-            print("Database tables recreated successfully")
+            print("✅ New database created successfully")
+        else:
+            # Migration was successful, just ensure all tables exist
+            db.create_all()
+            print("✅ Database initialized with migration support")
+            
+    except Exception as e:
+        print(f"❌ Database initialization error: {e}")
+        # Fallback to simple creation
+        try:
+            db.create_all()
+            print("✅ Database created with fallback method")
         except Exception as e2:
-            print(f"Failed to recreate database: {e2}")
+            print(f"❌ Failed to create database: {e2}")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
