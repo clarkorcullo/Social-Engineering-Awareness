@@ -29,7 +29,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 # Security configurations
-app.config['WTF_CSRF_ENABLED'] = True
+app.config['WTF_CSRF_ENABLED'] = False
 app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hour
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
