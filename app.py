@@ -14,12 +14,32 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(32)  # Generate secure random key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///social_engineering_awareness.db'
+# Use a more reliable database path for production
+import os
+if os.environ.get('RENDER'):
+    # On Render, use /tmp directory which is always writable
+    db_path = '/tmp/social_engineering_awareness.db'
+else:
+    # Local development
+    db_path = 'social_engineering_awareness.db'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database on app startup
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+        # Try to recreate tables
+        try:
+            db.drop_all()
+            db.create_all()
+            print("Database tables recreated successfully")
+        except Exception as e2:
+            print(f"Failed to recreate database: {e2}")
 
 # Security configurations
 app.config['WTF_CSRF_ENABLED'] = True
@@ -184,6 +204,15 @@ def load_user(user_id):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/test-db')
+def test_db():
+    try:
+        # Test database connection
+        user_count = User.query.count()
+        return jsonify({'status': 'success', 'user_count': user_count, 'message': 'Database is working'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
