@@ -7,7 +7,15 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///social_engineering_awareness.db'
+# Use a more reliable database path for production
+if os.environ.get('RENDER'):
+    # On Render, use /tmp directory which is always writable
+    db_path = '/tmp/social_engineering_awareness.db'
+else:
+    # Local development
+    db_path = 'social_engineering_awareness.db'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -32,82 +40,91 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return f"Error loading index: {str(e)}"
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form.get('username', '')
-        email = request.form.get('email', '')
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        specialization = request.form.get('specialization', '')
-        year_level = request.form.get('year_level', '')
-        
-        errors = {}
-        
-        if len(username) < 8:
-            errors['username'] = 'Username must be at least 8 characters long'
-        
-        if len(password) < 12:
-            errors['password'] = 'Password must be at least 12 characters long'
-        
-        if password != confirm_password:
-            errors['confirm_password'] = 'Passwords do not match'
-        
-        if User.query.filter_by(username=username).first():
-            errors['username'] = 'Username already exists'
-        
-        if User.query.filter_by(email=email).first():
-            errors['email'] = 'Email already registered'
-        
-        if not specialization:
-            errors['specialization'] = 'Please select your IT specialization'
-        
-        if not year_level:
-            errors['year_level'] = 'Please select your year level'
-        
-        if errors:
-            return render_template('register.html', errors=errors)
-        
-        try:
-            user = User(
-                username=username,
-                email=email,
-                password_hash=generate_password_hash(password),
-                full_name=username.title(),
-                specialization=specialization,
-                year_level=year_level
-            )
+    try:
+        if request.method == 'POST':
+            username = request.form.get('username', '')
+            email = request.form.get('email', '')
+            password = request.form.get('password', '')
+            confirm_password = request.form.get('confirm_password', '')
+            specialization = request.form.get('specialization', '')
+            year_level = request.form.get('year_level', '')
             
-            db.session.add(user)
-            db.session.commit()
+            errors = {}
             
-            flash('Registration successful! Please login.')
-            return redirect(url_for('login'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Registration failed: {str(e)}')
-            return render_template('register.html')
-    
-    return render_template('register.html')
+            if len(username) < 8:
+                errors['username'] = 'Username must be at least 8 characters long'
+            
+            if len(password) < 12:
+                errors['password'] = 'Password must be at least 12 characters long'
+            
+            if password != confirm_password:
+                errors['confirm_password'] = 'Passwords do not match'
+            
+            if User.query.filter_by(username=username).first():
+                errors['username'] = 'Username already exists'
+            
+            if User.query.filter_by(email=email).first():
+                errors['email'] = 'Email already registered'
+            
+            if not specialization:
+                errors['specialization'] = 'Please select your IT specialization'
+            
+            if not year_level:
+                errors['year_level'] = 'Please select your year level'
+            
+            if errors:
+                return render_template('register.html', errors=errors)
+            
+            try:
+                user = User(
+                    username=username,
+                    email=email,
+                    password_hash=generate_password_hash(password),
+                    full_name=username.title(),
+                    specialization=specialization,
+                    year_level=year_level
+                )
+                
+                db.session.add(user)
+                db.session.commit()
+                
+                flash('Registration successful! Please login.')
+                return redirect(url_for('login'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Registration failed: {str(e)}')
+                return render_template('register.html')
+        
+        return render_template('register.html')
+    except Exception as e:
+        return f"Error in register: {str(e)}"
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form.get('username', '')
-        password = request.form.get('password', '')
+    try:
+        if request.method == 'POST':
+            username = request.form.get('username', '')
+            password = request.form.get('password', '')
+            
+            user = User.query.filter_by(username=username).first()
+            
+            if user and check_password_hash(user.password_hash, password):
+                login_user(user)
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Invalid username or password')
+                return render_template('login.html')
         
-        user = User.query.filter_by(username=username).first()
-        
-        if user and check_password_hash(user.password_hash, password):
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid username or password')
-            return render_template('login.html')
-    
-    return render_template('login.html')
+        return render_template('login.html')
+    except Exception as e:
+        return f"Error in login: {str(e)}"
 
 @app.route('/logout')
 @login_required
