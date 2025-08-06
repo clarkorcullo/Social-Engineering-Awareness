@@ -49,6 +49,14 @@ def index():
     except Exception as e:
         return f"Error loading index: {str(e)}"
 
+@app.route('/profile')
+@login_required
+def profile():
+    try:
+        return render_template('profile.html')
+    except Exception as e:
+        return f"Error loading profile: {str(e)}"
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     try:
