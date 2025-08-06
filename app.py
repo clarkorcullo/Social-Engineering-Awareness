@@ -37,6 +37,11 @@ class User(UserMixin, db.Model):
     specialization = db.Column(db.String(50), nullable=False)
     year_level = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Progress tracking attributes
+    modules_completed = db.Column(db.Integer, default=0)
+    total_score = db.Column(db.Integer, default=0)
+    simulations_completed = db.Column(db.Integer, default=0)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -148,11 +153,21 @@ def logout():
 @login_required
 def dashboard():
     try:
-        # Provide default values for the dashboard template
+        # Get user progress data
+        completed_modules = current_user.modules_completed or 0
+        total_score = current_user.total_score or 0
+        simulations_completed = current_user.simulations_completed or 0
+        
+        # Calculate average score
+        average_score = 0
+        if completed_modules > 0:
+            average_score = round((total_score / completed_modules) * 10, 1)
+        
         dashboard_data = {
-            'completed_modules': 0,
-            'total_score': 0,
-            'average_score': 0
+            'completed_modules': completed_modules,
+            'total_score': total_score,
+            'average_score': average_score,
+            'simulations_completed': simulations_completed
         }
         return render_template('dashboard.html', **dashboard_data)
     except Exception as e:
@@ -168,7 +183,18 @@ def health():
 
 # Initialize database
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+        # Try to recreate tables
+        try:
+            db.drop_all()
+            db.create_all()
+            print("Database tables recreated successfully")
+        except Exception as e2:
+            print(f"Failed to recreate database: {e2}")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
