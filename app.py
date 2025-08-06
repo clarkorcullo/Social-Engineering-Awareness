@@ -17,6 +17,10 @@ app.config['SECRET_KEY'] = secrets.token_hex(32)  # Generate secure random key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///social_engineering_awareness.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Initialize database on app startup
+with app.app_context():
+    db.create_all()
+
 # Security configurations
 app.config['WTF_CSRF_ENABLED'] = True
 app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hour
@@ -1058,6 +1062,17 @@ def init_db():
         # Create all tables
         db.create_all()
         
+        # Verify tables exist by checking if User table has any columns
+        try:
+            # This will fail if the table doesn't exist
+            User.query.first()
+        except Exception as e:
+            print(f"Database initialization error: {e}")
+            # Recreate all tables
+            db.drop_all()
+            db.create_all()
+            print("Database tables recreated successfully")
+        
         # Create default modules if they don't exist
         if not Module.query.first():
             modules = [
@@ -1419,6 +1434,7 @@ def init_db():
             db.session.commit()
 
 if __name__ == '__main__':
+    # Initialize database
     init_db()
     # Use environment variables for production deployment
     port = int(os.environ.get('PORT', 5000))
