@@ -174,7 +174,7 @@ class FeedbackSurvey(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 # Routes
 @app.route('/')
@@ -211,7 +211,7 @@ def login():
             # Reset failed login attempts on successful login
             user.failed_login_attempts = 0
             user.locked_until = None
-            user.last_login = datetime.utcnow()
+            user.last_login = datetime.now(datetime.UTC)
             db.session.commit()
             login_user(user)
             return redirect(url_for('dashboard'))
@@ -238,11 +238,11 @@ def validate_username(username):
     return True, ""
 
 def validate_email(email):
-    """Validate email domain requirements"""
+    """Validate email format (allow any domain for now)"""
     import re
-    email_pattern = r'^[a-z0-9._%+-]+@mmdc\.mcl\.edu\.ph$'
-    if not re.match(email_pattern, email):
-        return False, "Email must be from the MMDC organization domain (mmdc.mcl.edu.ph)"
+    email_pattern = r'^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+    if not re.match(email_pattern, email, re.IGNORECASE):
+        return False, "Invalid email address"
     return True, ""
 
 def validate_password(password):
@@ -1055,6 +1055,7 @@ def calculate_behavioral_score(responses):
 # Initialize database
 def init_db():
     with app.app_context():
+        # Create all tables
         db.create_all()
         
         # Create default modules if they don't exist
