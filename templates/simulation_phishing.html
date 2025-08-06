@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Phishing Simulation - Social Engineering Awareness{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <img src="{{ url_for('static', filename='MMDCLogo.png') }}" alt="MMDC Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                        <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                    </div>
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-envelope"></i> Phishing Simulation Exercise
+                    </h3>
+                    <p class="mb-0">Practice identifying and responding to phishing attempts in a safe environment.</p>
+                </div>
+                <div class="card-body p-4">
+                    <div id="simulation-container">
+                        <!-- Scenario Selection -->
+                        <div id="scenario-selection" class="mb-4">
+                            <h4 class="mb-3">
+                                <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 25px; width: auto; margin-right: 10px; vertical-align: middle;">
+                                Choose a Scenario
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="card scenario-card" data-scenario="1">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-building fa-2x text-primary mb-2"></i>
+                                            <h6>Bank Security Alert</h6>
+                                            <small class="text-muted">Suspicious bank email</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card scenario-card" data-scenario="2">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-laptop fa-2x text-warning mb-2"></i>
+                                            <h6>IT Support Request</h6>
+                                            <small class="text-muted">Fake IT assistance</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card scenario-card" data-scenario="3">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-gift fa-2x text-success mb-2"></i>
+                                            <h6>Prize Notification</h6>
+                                            <small class="text-muted">Fake prize offer</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Simulation -->
+                        <div id="email-simulation" style="display: none;">
+                            <div class="email-container border rounded p-4 bg-light">
+                                <div class="email-header mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong id="sender-name">Sender Name</strong><br>
+                                            <small id="sender-email" class="text-muted">sender@example.com</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <small id="email-date" class="text-muted">Date</small><br>
+                                            <small id="email-time" class="text-muted">Time</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="email-subject mb-3">
+                                    <strong>Subject: </strong><span id="email-subject">Email Subject</span>
+                                </div>
+                                <div class="email-body" id="email-body">
+                                    <!-- Email content will be populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="mt-4">
+                                <h5>What would you do?</h5>
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <button class="btn btn-outline-primary w-100 action-btn" data-action="click">
+                                            <i class="fas fa-mouse-pointer"></i> Click Link
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <button class="btn btn-outline-secondary w-100 action-btn" data-action="reply">
+                                            <i class="fas fa-reply"></i> Reply
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <button class="btn btn-outline-info w-100 action-btn" data-action="forward">
+                                            <i class="fas fa-share"></i> Forward
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <button class="btn btn-outline-danger w-100 action-btn" data-action="delete">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Feedback Section -->
+                        <div id="feedback-section" style="display: none;">
+                            <div class="alert" id="feedback-alert">
+                                <!-- Feedback content will be populated by JavaScript -->
+                            </div>
+                            <div class="red-flags mt-3" id="red-flags">
+                                <!-- Red flags will be listed here -->
+                            </div>
+                            <div class="mt-4">
+                                <button class="btn btn-primary" id="next-scenario">
+                                    <i class="fas fa-arrow-right"></i> Next Scenario
+                                </button>
+                                <button class="btn btn-secondary" id="back-to-selection">
+                                    <i class="fas fa-arrow-left"></i> Back to Selection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Simulation scenarios
+const scenarios = {
+    1: {
+        name: "Bank Security Alert",
+        sender: "security@nationalbank.com",
+        senderName: "National Bank Security",
+        subject: "URGENT: Your account has been suspended",
+        date: "Today",
+        time: "2:34 PM",
+        body: `
+            <p>Dear Valued Customer,</p>
+            <p>We have detected suspicious activity on your account. For your security, your account has been temporarily suspended.</p>
+            <p><strong>IMMEDIATE ACTION REQUIRED:</strong></p>
+            <p>Please click the link below to verify your identity and restore access to your account:</p>
+            <p><a href="#" class="text-primary">https://nationalbank-verify.com/secure-login</a></p>
+            <p>If you do not verify within 24 hours, your account will be permanently closed.</p>
+            <p>Thank you for your cooperation.</p>
+            <p>National Bank Security Team</p>
+        `,
+        correctAction: "delete",
+        redFlags: [
+            "Urgency - 'IMMEDIATE ACTION REQUIRED'",
+            "Threat - 'account will be permanently closed'",
+            "Suspicious link - 'nationalbank-verify.com'",
+            "Generic greeting - 'Dear Valued Customer'",
+            "Pressure tactics - 24-hour deadline"
+        ],
+        explanation: "This is a classic phishing attempt using urgency and threats to pressure you into clicking a malicious link."
+    },
+    2: {
+        name: "IT Support Request",
+        sender: "it-support@company.com",
+        senderName: "IT Support Team",
+        subject: "Password Reset Required",
+        date: "Today",
+        time: "10:15 AM",
+        body: `
+            <p>Hello,</p>
+            <p>This is the IT Support Team. We are conducting a system-wide password reset for security purposes.</p>
+            <p>Please provide your current password so we can assist you with the reset process.</p>
+            <p>Reply to this email with your password, or call us at 1-800-IT-SUPPORT.</p>
+            <p>This is mandatory for all employees.</p>
+            <p>Thank you,<br>IT Support Team</p>
+        `,
+        correctAction: "delete",
+        redFlags: [
+            "Asking for password via email",
+            "Generic greeting - 'Hello'",
+            "Pressure - 'mandatory for all employees'",
+            "Suspicious phone number",
+            "No specific company name mentioned"
+        ],
+        explanation: "Legitimate IT support will never ask for your password via email. This is a social engineering attempt."
+    },
+    3: {
+        name: "Prize Notification",
+        sender: "winners@lottery.com",
+        senderName: "National Lottery",
+        subject: "CONGRATULATIONS! You've won $50,000!",
+        date: "Today",
+        time: "9:45 AM",
+        body: `
+            <p>Dear Winner,</p>
+            <p>Congratulations! You have been selected as the winner of our $50,000 cash prize!</p>
+            <p>To claim your prize, please click the link below and provide your banking information:</p>
+            <p><a href="#" class="text-primary">https://claim-prize-now.com/winner</a></p>
+            <p>You must claim within 48 hours or the prize will be forfeited.</p>
+            <p>This is a limited time offer!</p>
+            <p>Best regards,<br>National Lottery Team</p>
+        `,
+        correctAction: "delete",
+        redFlags: [
+            "Too good to be true - $50,000 prize",
+            "Urgency - '48 hours or forfeited'",
+            "Asking for banking information",
+            "Suspicious link - 'claim-prize-now.com'",
+            "Generic greeting - 'Dear Winner'"
+        ],
+        explanation: "If you didn't enter a lottery, you can't win it. This is a classic scam using greed and urgency."
+    }
+};
+
+let currentScenario = null;
+let startTime = null;
+
+// Initialize simulation
+document.addEventListener('DOMContentLoaded', function() {
+    // Scenario selection
+    document.querySelectorAll('.scenario-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const scenarioId = this.dataset.scenario;
+            loadScenario(scenarioId);
+        });
+    });
+
+    // Action buttons
+    document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = this.dataset.action;
+            handleAction(action);
+        });
+    });
+
+    // Navigation buttons
+    document.getElementById('next-scenario')?.addEventListener('click', function() {
+        showScenarioSelection();
+    });
+
+    document.getElementById('back-to-selection')?.addEventListener('click', function() {
+        showScenarioSelection();
+    });
+});
+
+function loadScenario(scenarioId) {
+    currentScenario = scenarios[scenarioId];
+    startTime = Date.now();
+    
+    // Update email content
+    document.getElementById('sender-name').textContent = currentScenario.senderName;
+    document.getElementById('sender-email').textContent = currentScenario.sender;
+    document.getElementById('email-subject').textContent = currentScenario.subject;
+    document.getElementById('email-date').textContent = currentScenario.date;
+    document.getElementById('email-time').textContent = currentScenario.time;
+    document.getElementById('email-body').innerHTML = currentScenario.body;
+    
+    // Show email simulation
+    document.getElementById('scenario-selection').style.display = 'none';
+    document.getElementById('email-simulation').style.display = 'block';
+    document.getElementById('feedback-section').style.display = 'none';
+}
+
+function handleAction(action) {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+    const isCorrect = action === currentScenario.correctAction;
+    
+    // Show feedback
+    const feedbackAlert = document.getElementById('feedback-alert');
+    const redFlagsList = document.getElementById('red-flags');
+    
+    if (isCorrect) {
+        feedbackAlert.className = 'alert alert-success';
+        feedbackAlert.innerHTML = `
+            <h5><i class="fas fa-check-circle"></i> Correct!</h5>
+            <p>${currentScenario.explanation}</p>
+        `;
+    } else {
+        feedbackAlert.className = 'alert alert-danger';
+        feedbackAlert.innerHTML = `
+            <h5><i class="fas fa-times-circle"></i> Incorrect!</h5>
+            <p>The correct action was: <strong>${getActionName(currentScenario.correctAction)}</strong></p>
+            <p>${currentScenario.explanation}</p>
+        `;
+    }
+    
+    // Show red flags
+    redFlagsList.innerHTML = `
+        <h6><i class="fas fa-flag"></i> Red Flags Identified:</h6>
+        <ul class="list-unstyled">
+            ${currentScenario.redFlags.map(flag => `<li><i class="fas fa-exclamation-triangle text-warning"></i> ${flag}</li>`).join('')}
+        </ul>
+    `;
+    
+    // Show feedback section
+    document.getElementById('email-simulation').style.display = 'none';
+    document.getElementById('feedback-section').style.display = 'block';
+    
+    // Send result to server
+    sendSimulationResult(action, isCorrect, timeTaken);
+}
+
+function getActionName(action) {
+    const actions = {
+        'click': 'Click Link',
+        'reply': 'Reply',
+        'forward': 'Forward',
+        'delete': 'Delete'
+    };
+    return actions[action] || action;
+}
+
+function showScenarioSelection() {
+    document.getElementById('scenario-selection').style.display = 'block';
+    document.getElementById('email-simulation').style.display = 'none';
+    document.getElementById('feedback-section').style.display = 'none';
+}
+
+function sendSimulationResult(action, isCorrect, timeTaken) {
+    fetch('{{ url_for("simulation_result") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            simulation_type: 'phishing',
+            scenario_id: Object.keys(scenarios).indexOf(currentScenario.name) + 1,
+            user_choice: action,
+            correct_choice: currentScenario.correctAction,
+            is_correct: isCorrect,
+            time_taken: timeTaken
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Simulation result saved:', data);
+    })
+    .catch(error => {
+        console.error('Error saving simulation result:', error);
+    });
+}
+</script>
+
+<style>
+.scenario-card {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.scenario-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.email-container {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.action-btn {
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %} 

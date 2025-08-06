@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module.name }} - Social Engineering Awareness{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <img src="{{ url_for('static', filename='MMDCLogo.png') }}" alt="MMDC Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                        <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                    </div>
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-book"></i> {{ module.name }}
+                    </h3>
+                    <p class="mb-0">{{ module.description }}</p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="module-content">
+                                <h4 class="mb-3">
+                                    <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 25px; width: auto; margin-right: 10px; vertical-align: middle;">
+                                    Learning Content
+                                </h4>
+                                <div class="content-area p-4 bg-light rounded">
+                                    {{ module.content | safe }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="sidebar">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-info-circle"></i> Module Information
+                                </h5>
+                                <div class="mb-3">
+                                    <strong>Status:</strong>
+                                    <span class="badge {% if progress.status == 'completed' %}bg-success{% elif progress.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ progress.status.title() }}
+                                    </span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Progress:</strong>
+                                    <div class="progress mt-1">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {% if progress.status == 'completed' %}100%{% elif progress.status == 'in_progress' %}50%{% else %}0%{% endif %}"
+                                             aria-valuenow="{% if progress.status == 'completed' %}100{% elif progress.status == 'in_progress' %}50{% else %}0{% endif %}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Score:</strong> {{ progress.score }}%
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Time Spent:</strong> {{ progress.time_spent }} minutes
+                                </div>
+                                
+                                <hr>
+                                
+                                <h6 class="mb-3">
+                                    <i class="fas fa-tasks"></i> Actions
+                                </h6>
+                                <div class="d-grid gap-2">
+                                    {% if progress.status != 'completed' %}
+                                        <button class="btn btn-primary" id="markComplete">
+                                            <i class="fas fa-check"></i> Mark as Complete
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-success" disabled>
+                                            <i class="fas fa-check-circle"></i> Completed
+                                        </button>
+                                        <a href="{{ url_for('module_knowledge_check', module_id=module.id) }}" class="btn btn-warning">
+                                            <i class="fas fa-question-circle"></i> Take Knowledge Check
+                                        </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('markComplete')?.addEventListener('click', function() {
+    if (confirm('Are you sure you want to mark this module as complete?')) {
+        // Update progress via API
+        fetch('{{ url_for("update_progress") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                module_id: {{ module.id }},
+                status: 'completed',
+                score: 100,
+                time_spent: 30
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating progress. Please try again.');
+        });
+    }
+});
+</script>
+{% endblock %} 

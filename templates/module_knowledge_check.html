@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block title %}Knowledge Check - {{ module.name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <img src="{{ url_for('static', filename='MMDCLogo.png') }}" alt="MMDC Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                        <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                    </div>
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-question-circle"></i> Knowledge Check: {{ module.name }}
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Assessment Rules -->
+                    <div class="alert alert-info mb-4">
+                        <h5><i class="fas fa-info-circle"></i> Assessment Rules</h5>
+                        <ul class="mb-0">
+                            <li><strong>Questions:</strong> {{ rules.questions_per_attempt }} questions per attempt</li>
+                            <li><strong>Passing Rate:</strong> {{ rules.passing_rate }}% ({{ rules.passing_rate * rules.questions_per_attempt // 100 }} out of {{ rules.questions_per_attempt }} correct)</li>
+                            <li><strong>Retakes:</strong> Unlimited attempts until you pass</li>
+                            <li><strong>Question Randomization:</strong> Questions are randomized and won't repeat from previous attempts</li>
+                        </ul>
+                    </div>
+
+                    <!-- Assessment Interface -->
+                    <div id="assessment-interface" style="display: none;">
+                        <div class="progress mb-4">
+                            <div class="progress-bar" role="progressbar" style="width: 0%" id="question-progress"></div>
+                        </div>
+
+                        <div id="question-container">
+                            <!-- Questions will be loaded here -->
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button class="btn btn-secondary" id="prev-btn" style="display: none;">
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </button>
+                            <button class="btn btn-primary" id="next-btn">
+                                Next <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="btn btn-success" id="submit-btn" style="display: none;">
+                                <i class="fas fa-check"></i> Submit Assessment
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Start Assessment Button -->
+                    <div id="start-section" class="text-center">
+                        <h5 class="mb-4">Ready to test your knowledge?</h5>
+                        <button class="btn btn-primary btn-lg" id="start-assessment">
+                            <i class="fas fa-play"></i> Start Knowledge Check
+                        </button>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div id="results-section" style="display: none;">
+                        <div class="text-center mb-4">
+                            <h4 id="result-title"></h4>
+                            <div class="alert" id="result-alert">
+                                <p id="result-message"></p>
+                                <p><strong>Score:</strong> <span id="result-score"></span></p>
+                                <p><strong>Correct Answers:</strong> <span id="result-correct"></span> out of <span id="result-total"></span></p>
+                            </div>
+                        </div>
+
+                        <div id="retake-section" style="display: none;">
+                            <div class="text-center">
+                                <button class="btn btn-primary" id="retake-btn">
+                                    <i class="fas fa-redo"></i> Take Again
+                                </button>
+                                <a href="{{ url_for('module', module_id=module.id) }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Module
+                                </a>
+                            </div>
+                        </div>
+
+                        <div id="pass-section" style="display: none;">
+                            <div class="text-center">
+                                <div class="alert alert-success">
+                                    <h5><i class="fas fa-trophy"></i> Congratulations!</h5>
+                                    <p>You have successfully passed the Knowledge Check for this module.</p>
+                                </div>
+                                <a href="{{ url_for('dashboard') }}" class="btn btn-success">
+                                    <i class="fas fa-home"></i> Go to Dashboard
+                                </a>
+                                <a href="{{ url_for('module', module_id=module.id + 1) }}" class="btn btn-primary">
+                                    <i class="fas fa-arrow-right"></i> Next Module
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQuestion = 0;
+let questions = [];
+let answers = {};
+let questionIds = [];
+
+document.getElementById('start-assessment').addEventListener('click', function() {
+    loadQuestions();
+});
+
+document.getElementById('next-btn').addEventListener('click', function() {
+    saveCurrentAnswer();
+    if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        showQuestion();
+    } else {
+        showSubmitButton();
+    }
+});
+
+document.getElementById('prev-btn').addEventListener('click', function() {
+    saveCurrentAnswer();
+    if (currentQuestion > 0) {
+        currentQuestion--;
+        showQuestion();
+    }
+});
+
+document.getElementById('submit-btn').addEventListener('click', function() {
+    saveCurrentAnswer();
+    submitAssessment();
+});
+
+document.getElementById('retake-btn').addEventListener('click', function() {
+    resetAssessment();
+    loadQuestions();
+});
+
+function loadQuestions() {
+    fetch(`/api/get-module-questions/{{ module.id }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error loading questions: ' + data.error);
+                return;
+            }
+            
+            questions = data.questions;
+            questionIds = data.question_ids;
+            currentQuestion = 0;
+            answers = {};
+            
+            document.getElementById('start-section').style.display = 'none';
+            document.getElementById('assessment-interface').style.display = 'block';
+            document.getElementById('results-section').style.display = 'none';
+            
+            showQuestion();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading questions. Please try again.');
+        });
+}
+
+function showQuestion() {
+    const question = questions[currentQuestion];
+    const container = document.getElementById('question-container');
+    
+    container.innerHTML = `
+        <div class="question-card">
+            <h5 class="mb-3">Question ${currentQuestion + 1} of ${questions.length}</h5>
+            <p class="question-text mb-4">${question.question}</p>
+            
+            <div class="options">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="q${question.id}" id="a${question.id}" value="a">
+                    <label class="form-check-label" for="a${question.id}">
+                        A) ${question.options.a}
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="q${question.id}" id="b${question.id}" value="b">
+                    <label class="form-check-label" for="b${question.id}">
+                        B) ${question.options.b}
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="q${question.id}" id="c${question.id}" value="c">
+                    <label class="form-check-label" for="c${question.id}">
+                        C) ${question.options.c}
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="q${question.id}" id="d${question.id}" value="d">
+                    <label class="form-check-label" for="d${question.id}">
+                        D) ${question.options.d}
+                    </label>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Restore previous answer if exists
+    if (answers[question.id]) {
+        document.getElementById(answers[question.id] + question.id).checked = true;
+    }
+    
+    updateNavigation();
+    updateProgress();
+}
+
+function saveCurrentAnswer() {
+    const question = questions[currentQuestion];
+    const selectedOption = document.querySelector(`input[name="q${question.id}"]:checked`);
+    
+    if (selectedOption) {
+        answers[question.id] = selectedOption.value;
+    }
+}
+
+function updateNavigation() {
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    prevBtn.style.display = currentQuestion === 0 ? 'none' : 'inline-block';
+    nextBtn.style.display = currentQuestion === questions.length - 1 ? 'none' : 'inline-block';
+}
+
+function showSubmitButton() {
+    document.getElementById('submit-btn').style.display = 'inline-block';
+    document.getElementById('next-btn').style.display = 'none';
+}
+
+function updateProgress() {
+    const progress = ((currentQuestion + 1) / questions.length) * 100;
+    document.getElementById('question-progress').style.width = progress + '%';
+}
+
+function submitAssessment() {
+    const formData = {
+        answers: answers,
+        questions_used: questionIds
+    };
+    
+    fetch('/api/module-assessment/{{ module.id }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showResults(data);
+        } else {
+            alert('Error submitting assessment. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting assessment. Please try again.');
+    });
+}
+
+function showResults(data) {
+    document.getElementById('assessment-interface').style.display = 'none';
+    document.getElementById('results-section').style.display = 'block';
+    
+    const resultTitle = document.getElementById('result-title');
+    const resultAlert = document.getElementById('result-alert');
+    const resultMessage = document.getElementById('result-message');
+    const resultScore = document.getElementById('result-score');
+    const resultCorrect = document.getElementById('result-correct');
+    const resultTotal = document.getElementById('result-total');
+    
+    resultScore.textContent = data.score + '%';
+    resultCorrect.textContent = data.correct_answers;
+    resultTotal.textContent = data.total_questions;
+    
+    if (data.passed) {
+        resultTitle.textContent = 'Assessment Passed!';
+        resultAlert.className = 'alert alert-success';
+        resultMessage.textContent = `Congratulations! You have successfully passed the Knowledge Check with a score of ${data.score}%.`;
+        document.getElementById('pass-section').style.display = 'block';
+        document.getElementById('retake-section').style.display = 'none';
+    } else {
+        resultTitle.textContent = 'Assessment Failed';
+        resultAlert.className = 'alert alert-warning';
+        resultMessage.textContent = `You need ${80 - data.score}% more to pass. Don't worry, you can take the assessment again with different questions.`;
+        document.getElementById('retake-section').style.display = 'block';
+        document.getElementById('pass-section').style.display = 'none';
+    }
+}
+
+function resetAssessment() {
+    currentQuestion = 0;
+    answers = {};
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('assessment-interface').style.display = 'block';
+}
+</script>
+{% endblock %} 

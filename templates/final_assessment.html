@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% block title %}Final Assessment - Social Engineering Awareness{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <img src="{{ url_for('static', filename='MMDCLogo.png') }}" alt="MMDC Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                        <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                    </div>
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-graduation-cap"></i> Final Assessment
+                    </h3>
+                    <p class="mb-0">Comprehensive evaluation of all learning outcomes</p>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Assessment Rules -->
+                    <div class="alert alert-warning mb-4">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Important Assessment Rules</h5>
+                        <ul class="mb-0">
+                            <li><strong>Questions:</strong> {{ rules.questions_per_attempt }} questions per attempt</li>
+                            <li><strong>Passing Rate:</strong> {{ rules.passing_rate }}% ({{ rules.passing_rate * rules.questions_per_attempt // 100 }} out of {{ rules.questions_per_attempt }} correct)</li>
+                            <li><strong>Attempts:</strong> Maximum {{ rules.max_attempts }} attempts only</li>
+                            <li><strong>Current Attempts:</strong> {{ rules.current_attempts }} of {{ rules.max_attempts }}</li>
+                            <li><strong>Question Randomization:</strong> Questions are randomized and won't repeat from previous attempts</li>
+                            <li><strong>Consequence:</strong> If you fail all {{ rules.max_attempts }} attempts, you must repeat ALL modules</li>
+                        </ul>
+                    </div>
+
+                    <!-- Warning for Final Attempt -->
+                    {% if rules.current_attempts == 2 %}
+                    <div class="alert alert-danger mb-4">
+                        <h6><i class="fas fa-exclamation-circle"></i> Final Attempt Warning</h6>
+                        <p class="mb-0">This is your final attempt! If you fail this assessment, you will need to repeat all modules from the beginning.</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Assessment Interface -->
+                    <div id="assessment-interface" style="display: none;">
+                        <div class="progress mb-4">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 0%" id="question-progress"></div>
+                        </div>
+
+                        <div id="question-container">
+                            <!-- Questions will be loaded here -->
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button class="btn btn-secondary" id="prev-btn" style="display: none;">
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </button>
+                            <button class="btn btn-danger" id="next-btn">
+                                Next <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="btn btn-success" id="submit-btn" style="display: none;">
+                                <i class="fas fa-check"></i> Submit Final Assessment
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Start Assessment Button -->
+                    <div id="start-section" class="text-center">
+                        <h5 class="mb-4">Ready for your final assessment?</h5>
+                        <p class="text-muted mb-4">This comprehensive test covers all topics from the 8 learning modules.</p>
+                        <button class="btn btn-danger btn-lg" id="start-assessment">
+                            <i class="fas fa-play"></i> Start Final Assessment
+                        </button>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div id="results-section" style="display: none;">
+                        <div class="text-center mb-4">
+                            <h4 id="result-title"></h4>
+                            <div class="alert" id="result-alert">
+                                <p id="result-message"></p>
+                                <p><strong>Score:</strong> <span id="result-score"></span></p>
+                                <p><strong>Correct Answers:</strong> <span id="result-correct"></span> out of <span id="result-total"></span></p>
+                                <p><strong>Attempt:</strong> <span id="result-attempt"></span> of {{ rules.max_attempts }}</p>
+                            </div>
+                        </div>
+
+                        <div id="fail-section" style="display: none;">
+                            <div class="text-center">
+                                <div class="alert alert-danger">
+                                    <h5><i class="fas fa-times-circle"></i> Assessment Failed</h5>
+                                    <p>You have used all {{ rules.max_attempts }} attempts. You must now repeat all modules from the beginning.</p>
+                                </div>
+                                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                                    <i class="fas fa-home"></i> Return to Dashboard
+                                </a>
+                            </div>
+                        </div>
+
+                        <div id="retake-section" style="display: none;">
+                            <div class="text-center">
+                                <button class="btn btn-danger" id="retake-btn">
+                                    <i class="fas fa-redo"></i> Take Again
+                                </button>
+                                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-home"></i> Back to Dashboard
+                                </a>
+                            </div>
+                        </div>
+
+                        <div id="pass-section" style="display: none;">
+                            <div class="text-center">
+                                <div class="alert alert-success">
+                                    <h5><i class="fas fa-trophy"></i> Congratulations!</h5>
+                                    <p>You have successfully passed the Final Assessment and completed the Social Engineering Awareness program!</p>
+                                </div>
+                                
+                                <!-- Feedback Survey -->
+                                <div id="feedback-survey" class="mt-4">
+                                    <h5 class="mb-4"><i class="fas fa-clipboard-list"></i> Program Feedback Survey</h5>
+                                    <p class="text-muted mb-4">Please take a moment to provide feedback about your learning experience. This helps us improve the program for future students.</p>
+                                    
+                                    <form id="survey-form">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label"><strong>1. How would you rate the overall quality of the program?</strong></label>
+                                                <select class="form-select" name="overall_rating" required>
+                                                    <option value="">Select rating...</option>
+                                                    <option value="5">Excellent (5/5)</option>
+                                                    <option value="4">Very Good (4/5)</option>
+                                                    <option value="3">Good (3/5)</option>
+                                                    <option value="2">Fair (2/5)</option>
+                                                    <option value="1">Poor (1/5)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label"><strong>2. How relevant was the content to your current situation?</strong></label>
+                                                <select class="form-select" name="relevance" required>
+                                                    <option value="">Select relevance...</option>
+                                                    <option value="5">Very Relevant (5/5)</option>
+                                                    <option value="4">Relevant (4/5)</option>
+                                                    <option value="3">Somewhat Relevant (3/5)</option>
+                                                    <option value="2">Not Very Relevant (2/5)</option>
+                                                    <option value="1">Not Relevant (1/5)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label"><strong>3. How helpful were the interactive simulations?</strong></label>
+                                                <select class="form-select" name="simulations_helpful" required>
+                                                    <option value="">Select rating...</option>
+                                                    <option value="5">Very Helpful (5/5)</option>
+                                                    <option value="4">Helpful (4/5)</option>
+                                                    <option value="3">Somewhat Helpful (3/5)</option>
+                                                    <option value="2">Not Very Helpful (2/5)</option>
+                                                    <option value="1">Not Helpful (1/5)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label"><strong>4. How confident do you feel in identifying social engineering attacks?</strong></label>
+                                                <select class="form-select" name="confidence" required>
+                                                    <option value="">Select confidence level...</option>
+                                                    <option value="5">Very Confident (5/5)</option>
+                                                    <option value="4">Confident (4/5)</option>
+                                                    <option value="3">Somewhat Confident (3/5)</option>
+                                                    <option value="2">Not Very Confident (2/5)</option>
+                                                    <option value="1">Not Confident (1/5)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>5. What aspects of the program need the most improvement?</strong></label>
+                                            <textarea class="form-control" name="improvements" rows="3" placeholder="Please share your suggestions for improvement..."></textarea>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>6. How has this program helped you in your current situation?</strong></label>
+                                            <textarea class="form-control" name="current_situation_help" rows="3" placeholder="Please describe how this program has benefited you..."></textarea>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>7. Would you recommend this program to other students?</strong></label>
+                                            <select class="form-select" name="recommendation" required>
+                                                <option value="">Select answer...</option>
+                                                <option value="yes">Yes, definitely</option>
+                                                <option value="probably">Probably</option>
+                                                <option value="maybe">Maybe</option>
+                                                <option value="no">No</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-paper-plane"></i> Submit Feedback
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Certificate Section (initially hidden) -->
+                                <div id="certificate-section" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-info-circle"></i> Thank you for your feedback!</h6>
+                                        <p class="mb-0">Your feedback helps us improve the program for future students.</p>
+                                    </div>
+                                    <a href="{{ url_for('dashboard') }}" class="btn btn-success">
+                                        <i class="fas fa-home"></i> Go to Dashboard
+                                    </a>
+                                    <button class="btn btn-primary" id="download-certificate">
+                                        <i class="fas fa-download"></i> Download Certificate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQuestion = 0;
+let questions = [];
+let answers = {};
+let questionIds = [];
+
+document.getElementById('start-assessment').addEventListener('click', function() {
+    if (confirm('Are you sure you want to start the Final Assessment? This will count as attempt {{ rules.current_attempts + 1 }} of {{ rules.max_attempts }}.')) {
+        loadQuestions();
+    }
+});
+
+document.getElementById('next-btn').addEventListener('click', function() {
+    saveCurrentAnswer();
+    if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        showQuestion();
+    } else {
+        showSubmitButton();
+    }
+});
+
+document.getElementById('prev-btn').addEventListener('click', function() {
+    saveCurrentAnswer();
+    if (currentQuestion > 0) {
+        currentQuestion--;
+        showQuestion();
+    }
+});
+
+document.getElementById('submit-btn').addEventListener('click', function() {
+    saveCurrentAnswer();
+    if (confirm('Are you sure you want to submit your Final Assessment? You cannot change your answers after submission.')) {
+        submitAssessment();
+    }
+});
+
+document.getElementById('retake-btn').addEventListener('click', function() {
+    resetAssessment();
+    loadQuestions();
+});
+
+document.getElementById('download-certificate').addEventListener('click', function() {
+    window.open('/generate-certificate', '_blank');
+});
+
+// Survey form submission
+document.getElementById('survey-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const surveyData = {};
+    
+    for (let [key, value] of formData.entries()) {
+        surveyData[key] = value;
+    }
+    
+    // Submit survey data
+    fetch('/api/submit-feedback', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(surveyData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Hide survey and show certificate section
+            document.getElementById('feedback-survey').style.display = 'none';
+            document.getElementById('certificate-section').style.display = 'block';
+        } else {
+            alert('Error submitting feedback. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting feedback. Please try again.');
+    });
+});
+
+function loadQuestions() {
+    fetch('/api/get-final-questions')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error loading questions: ' + data.error);
+                return;
+            }
+            
+            questions = data.questions;
+            questionIds = data.question_ids;
+            currentQuestion = 0;
+            answers = {};
+            
+            document.getElementById('start-section').style.display = 'none';
+            document.getElementById('assessment-interface').style.display = 'block';
+            document.getElementById('results-section').style.display = 'none';
+            
+            showQuestion();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading questions. Please try again.');
+        });
+}
+
+function showQuestion() {
+    const question = questions[currentQuestion];
+    const container = document.getElementById('question-container');
+    
+    container.innerHTML = `
+        <div class="question-card">
+            <h5 class="mb-3">Question ${currentQuestion + 1} of ${questions.length}</h5>
+            <p class="question-text mb-4">${question.question}</p>
+            
+            <div class="options">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="q${question.id}" id="a${question.id}" value="a">
+                    <label class="form-check-label" for="a${question.id}">
+                        A) ${question.options.a}
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="q${question.id}" id="b${question.id}" value="b">
+                    <label class="form-check-label" for="b${question.id}">
+                        B) ${question.options.b}
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="q${question.id}" id="c${question.id}" value="c">
+                    <label class="form-check-label" for="c${question.id}">
+                        C) ${question.options.c}
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="q${question.id}" id="d${question.id}" value="d">
+                    <label class="form-check-label" for="d${question.id}">
+                        D) ${question.options.d}
+                    </label>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Restore previous answer if exists
+    if (answers[question.id]) {
+        document.getElementById(answers[question.id] + question.id).checked = true;
+    }
+    
+    updateNavigation();
+    updateProgress();
+}
+
+function saveCurrentAnswer() {
+    const question = questions[currentQuestion];
+    const selectedOption = document.querySelector(`input[name="q${question.id}"]:checked`);
+    
+    if (selectedOption) {
+        answers[question.id] = selectedOption.value;
+    }
+}
+
+function updateNavigation() {
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    prevBtn.style.display = currentQuestion === 0 ? 'none' : 'inline-block';
+    nextBtn.style.display = currentQuestion === questions.length - 1 ? 'none' : 'inline-block';
+}
+
+function showSubmitButton() {
+    document.getElementById('submit-btn').style.display = 'inline-block';
+    document.getElementById('next-btn').style.display = 'none';
+}
+
+function updateProgress() {
+    const progress = ((currentQuestion + 1) / questions.length) * 100;
+    document.getElementById('question-progress').style.width = progress + '%';
+}
+
+function submitAssessment() {
+    const formData = {
+        answers: answers,
+        questions_used: questionIds
+    };
+    
+    fetch('/api/final-assessment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showResults(data);
+        } else {
+            alert('Error submitting assessment. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting assessment. Please try again.');
+    });
+}
+
+function showResults(data) {
+    document.getElementById('assessment-interface').style.display = 'none';
+    document.getElementById('results-section').style.display = 'block';
+    
+    const resultTitle = document.getElementById('result-title');
+    const resultAlert = document.getElementById('result-alert');
+    const resultMessage = document.getElementById('result-message');
+    const resultScore = document.getElementById('result-score');
+    const resultCorrect = document.getElementById('result-correct');
+    const resultTotal = document.getElementById('result-total');
+    const resultAttempt = document.getElementById('result-attempt');
+    
+    resultScore.textContent = data.score + '%';
+    resultCorrect.textContent = data.correct_answers;
+    resultTotal.textContent = data.total_questions;
+    resultAttempt.textContent = data.attempt_number;
+    
+    if (data.passed) {
+        resultTitle.textContent = 'Final Assessment Passed!';
+        resultAlert.className = 'alert alert-success';
+        resultMessage.textContent = `Congratulations! You have successfully passed the Final Assessment with a score of ${data.score}%.`;
+        document.getElementById('pass-section').style.display = 'block';
+        document.getElementById('retake-section').style.display = 'none';
+        document.getElementById('fail-section').style.display = 'none';
+    } else if (data.attempt_number >= {{ rules.max_attempts }}) {
+        resultTitle.textContent = 'Final Assessment Failed';
+        resultAlert.className = 'alert alert-danger';
+        resultMessage.textContent = `You have used all {{ rules.max_attempts }} attempts. You must repeat all modules from the beginning.`;
+        document.getElementById('fail-section').style.display = 'block';
+        document.getElementById('retake-section').style.display = 'none';
+        document.getElementById('pass-section').style.display = 'none';
+    } else {
+        resultTitle.textContent = 'Final Assessment Failed';
+        resultAlert.className = 'alert alert-warning';
+        resultMessage.textContent = `You need ${80 - data.score}% more to pass. You have {{ rules.max_attempts - data.attempt_number }} attempts remaining.`;
+        document.getElementById('retake-section').style.display = 'block';
+        document.getElementById('pass-section').style.display = 'none';
+        document.getElementById('fail-section').style.display = 'none';
+    }
+}
+
+function resetAssessment() {
+    currentQuestion = 0;
+    answers = {};
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('assessment-interface').style.display = 'block';
+}
+</script>
+{% endblock %} 

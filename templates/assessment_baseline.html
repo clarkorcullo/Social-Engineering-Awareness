@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+
+{% block title %}Baseline Assessment - Social Engineering Awareness{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <img src="{{ url_for('static', filename='MMDCLogo.png') }}" alt="MMDC Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                        <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 40px; width: auto; border-radius: 6px;">
+                    </div>
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list"></i> Baseline Assessment
+                    </h3>
+                    <p class="mb-0">This assessment will help us understand your current knowledge and awareness of social engineering.</p>
+                </div>
+                <div class="card-body p-4">
+                    <form id="assessmentForm">
+                        <!-- Progress Bar -->
+                        <div class="progress mb-4" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar" style="width: 0%" id="progressBar"></div>
+                        </div>
+
+                        <!-- Section 1: Demographics -->
+                        <div class="section" id="section1">
+                            <h4 class="mb-3">
+                                <i class="fas fa-user"></i> Section 1: Demographics
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Age Range</label>
+                                    <select class="form-select" name="age_range" required>
+                                        <option value="">Select age range</option>
+                                        <option value="16-18">16-18 years</option>
+                                        <option value="19-21">19-21 years</option>
+                                        <option value="22-25">22-25 years</option>
+                                        <option value="26+">26+ years</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Gender</label>
+                                    <select class="form-select" name="gender" required>
+                                        <option value="">Select gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                        <option value="prefer_not">Prefer not to say</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">IT Specialization</label>
+                                    <select class="form-select" name="specialization" required>
+                                        <option value="">Select specialization</option>
+                                        <option value="Software Development">Software Development</option>
+                                        <option value="Network & Cybersecurity">Network & Cybersecurity</option>
+                                        <option value="Data Analytics">Data Analytics</option>
+                                        <option value="Entrepreneurship Technology">Entrepreneurship Technology</option>
+                                        <option value="Marketing Technology">Marketing Technology</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Year Level</label>
+                                    <select class="form-select" name="year_level" required>
+                                        <option value="">Select year level</option>
+                                        <option value="1st Year">1st Year</option>
+                                        <option value="2nd Year">2nd Year</option>
+                                        <option value="3rd Year">3rd Year</option>
+                                        <option value="4th Year">4th Year</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Knowledge Assessment -->
+                        <div class="section" id="section2" style="display: none;">
+                            <h4 class="mb-3">
+                                <i class="fas fa-brain"></i> Section 2: Knowledge Assessment
+                            </h4>
+                            
+                            <div class="mb-4">
+                                <p class="fw-bold">1. What is social engineering?</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q1" id="q1a" value="a" required>
+                                    <label class="form-check-label" for="q1a">
+                                        A type of computer virus
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q1" id="q1b" value="b">
+                                    <label class="form-check-label" for="q1b">
+                                        A psychological manipulation technique to gain unauthorized access
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q1" id="q1c" value="c">
+                                    <label class="form-check-label" for="q1c">
+                                        A type of firewall software
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q1" id="q1d" value="d">
+                                    <label class="form-check-label" for="q1d">
+                                        A programming language
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <p class="fw-bold">2. Which of the following is NOT a common social engineering attack?</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q2" id="q2a" value="a" required>
+                                    <label class="form-check-label" for="q2a">
+                                        Phishing emails
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q2" id="q2b" value="b">
+                                    <label class="form-check-label" for="q2b">
+                                        Pretexting
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q2" id="q2c" value="c">
+                                    <label class="form-check-label" for="q2c">
+                                        SQL injection
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q2" id="q2d" value="d">
+                                    <label class="form-check-label" for="q2d">
+                                        Baiting
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <p class="fw-bold">3. What should you do if you receive a suspicious email asking for your password?</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q3" id="q3a" value="a" required>
+                                    <label class="form-check-label" for="q3a">
+                                        Reply with your password
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q3" id="q3b" value="b">
+                                    <label class="form-check-label" for="q3b">
+                                        Forward it to your friends
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q3" id="q3c" value="c">
+                                    <label class="form-check-label" for="q3c">
+                                        Delete it and report to IT support
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q3" id="q3d" value="d">
+                                    <label class="form-check-label" for="q3d">
+                                        Click on any links in the email
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Attitude Assessment -->
+                        <div class="section" id="section3" style="display: none;">
+                            <h4 class="mb-3">
+                                <i class="fas fa-heart"></i> Section 3: Attitude Assessment
+                            </h4>
+                            <p class="text-muted mb-4">Rate your agreement with the following statements (1 = Strongly Disagree, 5 = Strongly Agree)</p>
+                            
+                            <div class="mb-4">
+                                <p class="fw-bold">1. I believe social engineering attacks are a serious threat to cybersecurity.</p>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="attitude1" id="att1_1" value="1" required>
+                                    <label class="btn btn-outline-primary" for="att1_1">1</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude1" id="att1_2" value="2">
+                                    <label class="btn btn-outline-primary" for="att1_2">2</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude1" id="att1_3" value="3">
+                                    <label class="btn btn-outline-primary" for="att1_3">3</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude1" id="att1_4" value="4">
+                                    <label class="btn btn-outline-primary" for="att1_4">4</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude1" id="att1_5" value="5">
+                                    <label class="btn btn-outline-primary" for="att1_5">5</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <p class="fw-bold">2. I feel confident in my ability to identify social engineering attempts.</p>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="attitude2" id="att2_1" value="1" required>
+                                    <label class="btn btn-outline-primary" for="att2_1">1</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude2" id="att2_2" value="2">
+                                    <label class="btn btn-outline-primary" for="att2_2">2</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude2" id="att2_3" value="3">
+                                    <label class="btn btn-outline-primary" for="att2_3">3</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude2" id="att2_4" value="4">
+                                    <label class="btn btn-outline-primary" for="att2_4">4</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude2" id="att2_5" value="5">
+                                    <label class="btn btn-outline-primary" for="att2_5">5</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <p class="fw-bold">3. I think cybersecurity training is important for IT students.</p>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="attitude3" id="att3_1" value="1" required>
+                                    <label class="btn btn-outline-primary" for="att3_1">1</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude3" id="att3_2" value="2">
+                                    <label class="btn btn-outline-primary" for="att3_2">2</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude3" id="att3_3" value="3">
+                                    <label class="btn btn-outline-primary" for="att3_3">3</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude3" id="att3_4" value="4">
+                                    <label class="btn btn-outline-primary" for="att3_4">4</label>
+                                    
+                                    <input type="radio" class="btn-check" name="attitude3" id="att3_5" value="5">
+                                    <label class="btn btn-outline-primary" for="att3_5">5</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4: Behavioral Assessment -->
+                        <div class="section" id="section4" style="display: none;">
+                            <h4 class="mb-3">
+                                <i class="fas fa-user-check"></i> Section 4: Behavioral Assessment
+                            </h4>
+                            
+                            <div class="mb-4">
+                                <p class="fw-bold">1. How often do you verify the sender's email address before responding to emails?</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior1" id="beh1_1" value="never" required>
+                                    <label class="form-check-label" for="beh1_1">Never</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior1" id="beh1_2" value="rarely">
+                                    <label class="form-check-label" for="beh1_2">Rarely</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior1" id="beh1_3" value="sometimes">
+                                    <label class="form-check-label" for="beh1_3">Sometimes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior1" id="beh1_4" value="often">
+                                    <label class="form-check-label" for="beh1_4">Often</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior1" id="beh1_5" value="always">
+                                    <label class="form-check-label" for="beh1_5">Always</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <p class="fw-bold">2. What would you do if someone claiming to be from IT support asks for your password?</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior2" id="beh2_a" value="a" required>
+                                    <label class="form-check-label" for="beh2_a">
+                                        Provide your password immediately
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior2" id="beh2_b" value="b">
+                                    <label class="form-check-label" for="beh2_b">
+                                        Ask for their identification first
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior2" id="beh2_c" value="c">
+                                    <label class="form-check-label" for="beh2_c">
+                                        Contact IT support through official channels to verify
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior2" id="beh2_d" value="d">
+                                    <label class="form-check-label" for="beh2_d">
+                                        Ignore the request completely
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <p class="fw-bold">3. Would you share your password with a trusted colleague?</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior3" id="beh3_yes" value="yes" required>
+                                    <label class="form-check-label" for="beh3_yes">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="behavior3" id="beh3_no" value="no">
+                                    <label class="form-check-label" for="beh3_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 5: Open-ended Questions -->
+                        <div class="section" id="section5" style="display: none;">
+                            <h4 class="mb-3">
+                                <i class="fas fa-comments"></i> Section 5: Open-ended Questions
+                            </h4>
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">1. What do you think is the biggest cybersecurity threat facing organizations today?</label>
+                                <textarea class="form-control" name="open1" rows="3" placeholder="Please share your thoughts..."></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">2. How do you currently protect your personal information online?</label>
+                                <textarea class="form-control" name="open2" rows="3" placeholder="Please describe your current practices..."></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">3. What would motivate you to learn more about cybersecurity?</label>
+                                <textarea class="form-control" name="open3" rows="3" placeholder="Please share your motivations..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </button>
+                            <button type="button" class="btn btn-primary" id="nextBtn">
+                                Next <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+                                <i class="fas fa-check"></i> Submit Assessment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSection = 1;
+const totalSections = 5;
+
+function updateProgress() {
+    const progress = (currentSection / totalSections) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+}
+
+function showSection(sectionNum) {
+    // Hide all sections
+    for (let i = 1; i <= totalSections; i++) {
+        document.getElementById('section' + i).style.display = 'none';
+    }
+    
+    // Show current section
+    document.getElementById('section' + currentSection).style.display = 'block';
+    
+    // Update navigation buttons
+    document.getElementById('prevBtn').style.display = currentSection > 1 ? 'block' : 'none';
+    document.getElementById('nextBtn').style.display = currentSection < totalSections ? 'block' : 'none';
+    document.getElementById('submitBtn').style.display = currentSection === totalSections ? 'block' : 'none';
+    
+    updateProgress();
+}
+
+document.getElementById('nextBtn').addEventListener('click', function() {
+    if (currentSection < totalSections) {
+        currentSection++;
+        showSection(currentSection);
+    }
+});
+
+document.getElementById('prevBtn').addEventListener('click', function() {
+    if (currentSection > 1) {
+        currentSection--;
+        showSection(currentSection);
+    }
+});
+
+document.getElementById('assessmentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Collect form data
+    const formData = new FormData(this);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    // Submit to server
+    fetch('{{ url_for("assessment", assessment_type="baseline") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Assessment submitted successfully! Your score: ' + data.total_score + '%');
+            window.location.href = '{{ url_for("dashboard") }}';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting assessment. Please try again.');
+    });
+});
+
+// Initialize first section
+showSection(1);
+</script>
+{% endblock %} 
