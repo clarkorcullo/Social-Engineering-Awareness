@@ -198,35 +198,54 @@
         .icon-fallback {
             display: inline-block;
             font-style: normal;
-            font-weight: normal;
-            font-size: 1em;
-            line-height: 1;
-            vertical-align: middle;
         }
 
-        .icon-user::before { content: "👤"; }
-        .icon-lock::before { content: "🔒"; }
-        .icon-eye::before { content: "👁"; }
-        .icon-eye-slash::before { content: "🙈"; }
-        .icon-exclamation-triangle::before { content: "⚠️"; }
-        .icon-exclamation-circle::before { content: "❌"; }
-        .icon-check-circle::before { content: "✅"; }
-        .icon-info-circle::before { content: "ℹ️"; }
-        .icon-envelope::before { content: "📧"; }
-        .icon-graduation-cap::before { content: "🎓"; }
-        .icon-calendar-alt::before { content: "📅"; }
-        .icon-shield-alt::before { content: "🛡️"; }
-        .icon-user-plus::before { content: "➕"; }
-        .icon-sign-in-alt::before { content: "➡️"; }
-
-        /* Hide fallbacks when Font Awesome is loaded */
-        .fas ~ .icon-fallback, .far ~ .icon-fallback, .fab ~ .icon-fallback {
-            display: none;
+        /* Burger Menu Styles */
+        .dropdown .btn-link {
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: transparent;
+            border: none;
         }
 
-        /* Show fallbacks when Font Awesome fails */
-        .fas:not([class*="fa-"]):before, .far:not([class*="fa-"]):before, .fab:not([class*="fa-"]):before {
-            display: none;
+        .dropdown .btn-link:hover {
+            background: rgba(52, 152, 219, 0.1);
+            transform: scale(1.05);
+        }
+
+        .dropdown-menu {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            padding: 8px 0;
+            min-width: 200px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 2px 8px;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(52, 152, 219, 0.1);
+            transform: translateX(5px);
+        }
+
+        .dropdown-item.text-danger:hover {
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .dropdown-divider {
+            margin: 8px 0;
+            border-color: #e1e8ed;
         }
 
         /* Responsive adjustments */
@@ -258,30 +277,31 @@
                     <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" class="logo">
                 </div>
                 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" title="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('index') }}">
-                                <i class="fas fa-home"></i><span class="icon-fallback icon-home"></span> Home
+                <!-- Burger Menu Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-link text-dark" type="button" id="burgerMenu" data-bs-toggle="dropdown" aria-expanded="false" title="Menu">
+                        <i class="fas fa-bars fa-lg"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="burgerMenu">
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('index') }}">
+                                <i class="fas fa-home me-2"></i> Home
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard') }}">
-                                <i class="fas fa-tachometer-alt"></i><span class="icon-fallback icon-dashboard"></span> Dashboard
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('profile') }}">
-                                <i class="fas fa-user"></i><span class="icon-fallback icon-user"></span> Profile
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('profile') }}">
+                                <i class="fas fa-user me-2"></i> Profile
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('logout') }}">
-                                <i class="fas fa-sign-out-alt"></i><span class="icon-fallback icon-sign-out"></span> Logout
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
                             </a>
                         </li>
                     </ul>
@@ -368,9 +388,10 @@
         <div class="container">
             <div class="d-flex justify-content-center align-items-center gap-4">
                 <img src="{{ url_for('static', filename='MMDCLogo.png') }}" alt="MMDC Logo" class="footer-logo">
-                <span class="footer-text text-dark">
-                    © 2024 Mapúa Malayan Digital College. Social Engineering Awareness Program.
-                </span>
+                <div class="footer-text text-dark text-center">
+                    <div class="mb-1">© 2025 Mapúa Malayan Digital College.</div>
+                    <div>Social Engineering Awareness Program.</div>
+                </div>
                 <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" class="footer-logo">
             </div>
         </div>

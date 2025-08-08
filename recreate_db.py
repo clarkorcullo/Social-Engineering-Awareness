@@ -25,8 +25,7 @@ def recreate_database():
             birthday=None,
             address='MMDC Main Campus',
             specialization='Network & Cybersecurity',
-            year_level='4th Year',
-            cybersecurity_experience=True
+            year_level='4th Year'
         )
         db.session.add(admin_user)
         print("✅ Created admin user")

@@ -3,91 +3,1023 @@
 {% block title %}{{ module.name }} - Social Engineering Awareness{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        <img src="{{ url_for('static', filename='MMDCLogo.png') }}" alt="MMDC Logo" style="height: 40px; width: auto; border-radius: 6px;">
-                        <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 40px; width: auto; border-radius: 6px;">
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main Content Area -->
+        <div class="col-lg-9">
+            <div class="module-container">
+                <!-- Module Header -->
+                <div class="module-header">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                                    <li class="breadcrumb-item active">{{ module.name }}</li>
+                                </ol>
+                            </nav>
+                            <h1 class="module-title">
+                                <i class="fas fa-book-open me-3"></i>{{ module.name }}
+                            </h1>
+                            <p class="module-description">{{ module.description }}</p>
+                        </div>
+                        <div class="module-status">
+                            <span class="badge {% if progress.status == 'completed' %}bg-success{% elif progress.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
+                                <i class="fas {% if progress.status == 'completed' %}fa-check-circle{% elif progress.status == 'in_progress' %}fa-clock{% else %}fa-circle{% endif %} me-2"></i>
+                                {{ progress.status.title() }}
+                            </span>
+                        </div>
                     </div>
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-book"></i> {{ module.name }}
-                    </h3>
-                    <p class="mb-0">{{ module.description }}</p>
                 </div>
-                <div class="card-body p-4">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="module-content">
-                                <h4 class="mb-3">
-                                    <img src="{{ url_for('static', filename='SEALogo.png') }}" alt="SEA Logo" style="height: 25px; width: auto; margin-right: 10px; vertical-align: middle;">
-                                    Learning Content
-                                </h4>
-                                <div class="content-area p-4 bg-light rounded">
-                                    {{ module.content | safe }}
-                                </div>
+
+                <!-- Module Content -->
+                <div class="module-content">
+                    <div class="content-wrapper">
+                        <div class="content-header">
+                            <h2 class="content-title">
+                                <i class="fas fa-graduation-cap me-2"></i>Learning Content
+                            </h2>
+                            <div class="content-meta">
+                                <span class="meta-item">
+                                    <i class="fas fa-clock me-1"></i>Estimated time: 15-20 minutes
+                                </span>
+                                <span class="meta-item">
+                                    <i class="fas fa-eye me-1"></i>Reading material
+                                </span>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="sidebar">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-info-circle"></i> Module Information
-                                </h5>
-                                <div class="mb-3">
-                                    <strong>Status:</strong>
-                                    <span class="badge {% if progress.status == 'completed' %}bg-success{% elif progress.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}">
-                                        {{ progress.status.title() }}
-                                    </span>
-                                </div>
-                                <div class="mb-3">
-                                    <strong>Progress:</strong>
-                                    <div class="progress mt-1">
-                                        <div class="progress-bar" role="progressbar" 
-                                             style="width: {% if progress.status == 'completed' %}100%{% elif progress.status == 'in_progress' %}50%{% else %}0%{% endif %}"
-                                             aria-valuenow="{% if progress.status == 'completed' %}100{% elif progress.status == 'in_progress' %}50{% else %}0{% endif %}" 
-                                             aria-valuemin="0" aria-valuemax="100">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <strong>Score:</strong> {{ progress.score }}%
-                                </div>
-                                <div class="mb-3">
-                                    <strong>Time Spent:</strong> {{ progress.time_spent }} minutes
-                                </div>
-                                
-                                <hr>
-                                
-                                <h6 class="mb-3">
-                                    <i class="fas fa-tasks"></i> Actions
-                                </h6>
-                                <div class="d-grid gap-2">
-                                    {% if progress.status != 'completed' %}
-                                        <button class="btn btn-primary" id="markComplete">
-                                            <i class="fas fa-check"></i> Mark as Complete
-                                        </button>
-                                    {% else %}
-                                        <button class="btn btn-success" disabled>
-                                            <i class="fas fa-check-circle"></i> Completed
-                                        </button>
-                                        <a href="{{ url_for('module_knowledge_check', module_id=module.id) }}" class="btn btn-warning">
-                                            <i class="fas fa-question-circle"></i> Take Knowledge Check
-                                        </a>
-                                    {% endif %}
-                                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-arrow-left"></i> Back to Dashboard
-                                    </a>
-                                </div>
+                        
+                        <div class="content-body">
+                            <div class="content-text">
+                                {{ module.content | safe }}
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Module Actions -->
+                <div class="module-actions">
+                    <div class="action-buttons">
+                        {% if progress.status != 'completed' %}
+                            <button class="btn btn-primary btn-lg" id="markComplete">
+                                <i class="fas fa-check me-2"></i>Mark as Complete
+                            </button>
+                        {% else %}
+                            <div class="completion-status">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <span class="text-success fw-bold">Module Completed</span>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Knowledge Check Button - Always show if user has read content -->
+                        <a href="{{ url_for('module_knowledge_check', module_id=module.id) }}" class="btn btn-warning btn-lg">
+                            <i class="fas fa-question-circle me-2"></i>
+                            {% if knowledge_check_score > 0 %}
+                                Retake Knowledge Check
+                            {% else %}
+                                Take Knowledge Check
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <div class="module-sidebar">
+                <!-- Progress Card -->
+                <div class="sidebar-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-line me-2"></i>Your Progress
+                    </h5>
+                    <div class="progress-section">
+                        <div class="progress-item">
+                            <label>Completion Status</label>
+                            <div class="progress mb-2">
+                                <div class="progress-bar {% if knowledge_check_score >= 80 %}bg-success{% elif knowledge_check_score > 0 %}bg-warning{% else %}bg-secondary{% endif %}" 
+                                     style="width: {% if knowledge_check_score >= 80 %}100%{% elif knowledge_check_score > 0 %}50%{% else %}0%{% endif %}">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {% if knowledge_check_score >= 80 %}100% Complete{% elif knowledge_check_score > 0 %}In Progress{% else %}Not Started{% endif %}
+                            </small>
+                        </div>
+                        
+                        <div class="progress-item">
+                            <label>Knowledge Check Score</label>
+                            <div class="score-display">
+                                <span class="score-value {% if knowledge_check_score >= 80 %}text-success{% elif knowledge_check_score > 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ knowledge_check_score }}%
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-item">
+                            <label>Time Spent</label>
+                            <div class="time-display">
+                                <i class="fas fa-clock me-1"></i>{{ progress.time_spent }} minutes
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module Info Card -->
+                <div class="sidebar-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Module Information
+                    </h5>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">Module Number</span>
+                            <span class="info-value">{{ module.order }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Type</span>
+                            <span class="info-value">Learning Module</span>
+                        </div>
+                        {% if module.has_simulation %}
+                        <div class="info-item">
+                            <span class="info-label">Simulation</span>
+                            <span class="info-value text-success">Available</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Navigation Card -->
+                <div class="sidebar-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-compass me-2"></i>Navigation
+                    </h5>
+                    <div class="nav-buttons">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        {% if module.order > 1 %}
+                        <a href="{{ url_for('module', module_id=module.order-1) }}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="fas fa-chevron-left me-2"></i>Previous Module
+                        </a>
+                        {% endif %}
+                        {% if module.order < 8 %}
+                        <a href="{{ url_for('module', module_id=module.order+1) }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-chevron-right me-2"></i>Next Module
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Module Container Styles */
+.module-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+/* Module Header */
+.module-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    position: relative;
+}
+
+.module-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("{{ url_for('static', filename='SEALogo.png') }}") no-repeat right bottom;
+    background-size: 150px;
+    opacity: 0.1;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-bottom: 15px;
+}
+
+.breadcrumb-item a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: white;
+}
+
+.module-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.module-description {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.module-status {
+    position: relative;
+    z-index: 2;
+}
+
+/* Module Content */
+.module-content {
+    padding: 40px;
+}
+
+.content-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.content-header {
+    border-bottom: 3px solid #e9ecef;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.content-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.content-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.content-body {
+    line-height: 1.8;
+}
+
+.content-text {
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.content-text h1, .content-text h2, .content-text h3, .content-text h4, .content-text h5, .content-text h6 {
+    color: #2c3e50;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.content-text h1 { font-size: 2rem; }
+.content-text h2 { font-size: 1.75rem; }
+.content-text h3 { font-size: 1.5rem; }
+.content-text h4 { font-size: 1.25rem; }
+
+.content-text p {
+    margin-bottom: 20px;
+    text-align: justify;
+}
+
+.content-text ul, .content-text ol {
+    margin-bottom: 20px;
+    padding-left: 25px;
+}
+
+.content-text li {
+    margin-bottom: 8px;
+}
+
+.content-text blockquote {
+    border-left: 4px solid #3498db;
+    padding-left: 20px;
+    margin: 20px 0;
+    font-style: italic;
+    color: #555;
+}
+
+.content-text .alert {
+    margin: 20px 0;
+    border-radius: 10px;
+}
+
+/* Learning Module Styles */
+.learning-module {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #2c3e50;
+}
+
+.module-intro {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.module-intro::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("{{ url_for('static', filename='SEALogo.png') }}") no-repeat right bottom;
+    background-size: 120px;
+    opacity: 0.1;
+}
+
+.intro-header {
+    position: relative;
+    z-index: 2;
+}
+
+.intro-header h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.intro-header .lead {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.learning-objectives {
+    margin-top: 30px;
+    position: relative;
+    z-index: 2;
+}
+
+.learning-objectives h3 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.objectives-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.objective-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.objective-item i {
+    color: #4CAF50;
+    font-size: 1.2rem;
+    margin-top: 2px;
+}
+
+.objective-item span {
+    color: white;
+    font-weight: 500;
+}
+
+/* Content Sections */
+.content-section {
+    margin-bottom: 40px;
+    padding: 30px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+}
+
+.content-section h3 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #3498db;
+}
+
+.content-section p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 20px;
+    color: #34495e;
+}
+
+/* Definition Cards */
+.definition-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+    border-left: 5px solid #3498db;
+}
+
+.definition-card .card-header {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.definition-card .card-body p {
+    margin-bottom: 15px;
+    font-size: 1.05rem;
+}
+
+/* Statistics Highlight */
+.statistics-highlight {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 25px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+/* Psychology Grid */
+.psychology-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 25px 0;
+}
+
+.psychology-card {
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.psychology-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.psychology-card.helpful {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+}
+
+.psychology-card.trusting {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: white;
+}
+
+.psychology-card.curious {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+    color: white;
+}
+
+.psychology-card.fearful {
+    background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+    color: white;
+}
+
+.psychology-card .card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    opacity: 0.9;
+}
+
+.psychology-card h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.psychology-card p {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 12px;
+    padding: 25px;
+    margin: 25px 0;
+    border: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+    border-left: 5px solid #ffc107;
+}
+
+.alert-icon {
+    font-size: 1.5rem;
+    margin-top: 2px;
+}
+
+.alert-content h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.alert-content p {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+/* Process Timeline */
+.process-timeline {
+    margin: 30px 0;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border-left: 4px solid #3498db;
+}
+
+.timeline-marker {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.timeline-content h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.timeline-content p {
+    margin: 0;
+    color: #34495e;
+    font-size: 1.05rem;
+}
+
+/* Example Cards */
+.example-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    margin: 25px 0;
+}
+
+.example-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.example-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.example-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.example-header i {
+    font-size: 1.5rem;
+}
+
+.example-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.example-content {
+    padding: 25px;
+}
+
+.example-content h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    margin-top: 0;
+}
+
+.example-content p {
+    margin-bottom: 15px;
+    color: #34495e;
+}
+
+.example-content ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.example-content li {
+    margin-bottom: 8px;
+    color: #34495e;
+}
+
+/* Attack Overview */
+.attack-overview {
+    margin: 25px 0;
+}
+
+.overview-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 25px;
+    border-left: 5px solid #3498db;
+}
+
+.overview-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.overview-header i {
+    font-size: 1.5rem;
+    color: #3498db;
+}
+
+.overview-header h4 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Type Cards */
+.phishing-types, .vishing-examples, .pretexting-examples, .baiting-examples, .quid-pro-quo-examples {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 25px 0;
+}
+
+.type-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+
+.type-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+}
+
+.type-header.email {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+}
+
+.type-header.spear {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+}
+
+.type-header.whaling {
+    background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+}
+
+.type-header i {
+    font-size: 1.3rem;
+}
+
+.type-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.type-content {
+    padding: 20px;
+}
+
+.type-content p {
+    margin-bottom: 15px;
+    color: #34495e;
+}
+
+.warning-signs h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e74c3c;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.warning-signs ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.warning-signs li {
+    margin-bottom: 6px;
+    color: #34495e;
+    font-size: 0.95rem;
+}
+
+/* Takeaways Grid */
+.takeaways-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 25px 0;
+}
+
+.takeaway-item {
+    text-align: center;
+    padding: 25px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 2px solid transparent;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.takeaway-item:hover {
+    transform: translateY(-3px);
+    border-color: #3498db;
+}
+
+.takeaway-icon {
+    font-size: 2.5rem;
+    color: #3498db;
+    margin-bottom: 15px;
+}
+
+.takeaway-item h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.takeaway-item p {
+    color: #34495e;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Module Actions */
+.module-actions {
+    background: #f8f9fa;
+    padding: 30px 40px;
+    border-top: 1px solid #e9ecef;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.completion-status {
+    font-size: 1.2rem;
+    padding: 15px 30px;
+    background: #d4edda;
+    border-radius: 10px;
+    border: 1px solid #c3e6cb;
+}
+
+/* Sidebar Styles */
+.module-sidebar {
+    position: sticky;
+    top: 100px;
+}
+
+.sidebar-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.progress-section {
+    space-y: 15px;
+}
+
+.progress-item {
+    margin-bottom: 20px;
+}
+
+.progress-item label {
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.score-display, .time-display {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.score-value {
+    color: #27ae60;
+}
+
+.info-list {
+    space-y: 10px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.nav-buttons {
+    space-y: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .module-sidebar {
+        position: static;
+        margin-top: 30px;
+    }
+    
+    .module-header {
+        padding: 30px 20px;
+    }
+    
+    .module-content {
+        padding: 30px 20px;
+    }
+    
+    .module-actions {
+        padding: 20px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+    
+    .objectives-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .statistics-highlight {
+        grid-template-columns: 1fr;
+    }
+    
+    .psychology-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .example-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .takeaways-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .module-title {
+        font-size: 2rem;
+    }
+    
+    .content-title {
+        font-size: 1.5rem;
+    }
+    
+    .content-text {
+        font-size: 1rem;
+    }
+    
+    .content-meta {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .intro-header h2 {
+        font-size: 2rem;
+    }
+    
+    .statistics-highlight {
+        grid-template-columns: 1fr;
+    }
+    
+    .phishing-types, .vishing-examples, .pretexting-examples, .baiting-examples, .quid-pro-quo-examples {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 
 <script>
 document.getElementById('markComplete')?.addEventListener('click', function() {
