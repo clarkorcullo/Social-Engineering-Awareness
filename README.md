@@ -1,10 +1,17 @@
 # Social Engineering Awareness Program
 
-A comprehensive web-based learning platform for social engineering awareness training, built with Flask and modern OOP principles.
+A production-ready, OOP‑driven Flask application that delivers interactive learning on social engineering threats, defenses, and incident response. The system provides a structured curriculum with knowledge checks, real‑world simulations, analytics, and certification.
 
-## 🚀 Project Overview
+Repository: [`clarkorcullo/Social-Engineering-Awareness`](https://github.com/clarkorcullo/Social-Engineering-Awareness)
 
-This application provides an interactive learning experience for understanding social engineering attacks, prevention strategies, and incident response. It features a complete learning path with modules, assessments, simulations, and progress tracking.
+## 🚀 Overview
+
+This platform guides learners through seven modules and a final assessment, enforcing completion rules and offering realistic practice via simulations (Phishing, Pretexting, Baiting, Quid Pro Quo). It tracks progress, scores, time spent, and recent activity, and supports survey and certificate generation upon completion.
+
+Key principles:
+- Clean separation of concerns via a service layer (`business_services/`) and data models (`data_models/`).
+- Content is code-first and versioned in `learning_modules/`.
+- Simulations follow a Base → Concrete OOP pattern in `simulations/`.
 
 ## 📁 Project Structure
 
@@ -81,37 +88,31 @@ CapstoneProject/
     └── social_engineering_awareness.db
 ```
 
-## 🎯 Key Features
+## 🎯 Core Features
 
 ### 📚 Learning Modules
-- **7 Comprehensive Modules** covering all aspects of social engineering
-- **Rich Content** with HTML formatting and interactive elements
-- **Progressive Learning Path** with module dependencies
-- **Knowledge Checks** with detailed explanations
+- 7 comprehensive modules with practical examples and guidance
+- Progressive unlocking: each module requires the previous one to be fully completed
+- Knowledge checks per module with detailed feedback
 
 ### 🎮 Interactive Simulations
-- **Phishing Simulations** - Email-based attack scenarios
-- **Pretexting Simulations** - Phone call and impersonation scenarios
-- **Baiting Simulations** - Physical device and social media scenarios
-- **Real-time Feedback** with explanations and learning points
+- Phishing, Pretexting, Baiting, Quid Pro Quo
+- OOP design: `BaseSimulation` + specific implementations
+- Real-time feedback with red‑flag explanations
 
 ### 📊 Assessment System
-- **Module Knowledge Checks** - 5 questions per module
-- **Final Assessment** - Comprehensive evaluation
-- **Automatic Grading** with detailed feedback
-- **Progress Tracking** with completion statistics
+- Module Knowledge Checks: 5 questions/module, unlimited retakes
+- Final Assessment: 25 questions, 3 retakes allowed every 48 hours
+- Automatic grading, percentage computation, attempts tracking
+- Recent activity feed (assessments, simulations, completions)
 
 ### 👤 User Management
-- **User Registration** with validation
-- **Secure Authentication** with password hashing
-- **Profile Management** with customizable information
-- **Progress Tracking** across all modules
+- Registration with validation, secure authentication (Flask‑Login)
+- Profile updates, avatars, and consistent progress tracking
 
 ### 📈 Analytics & Reporting
-- **Learning Analytics** with completion rates
-- **Performance Metrics** with score tracking
-- **Survey System** for feedback collection
-- **Certificate Generation** upon completion
+- Completion rate, average scores, simulations done, and time spent
+- Survey and certificate unlocking based on completion rules
 
 ## 🛠️ Technology Stack
 
@@ -121,6 +122,12 @@ CapstoneProject/
 - **Frontend**: HTML5, CSS3, Bootstrap 5, JavaScript
 - **Architecture**: Object-Oriented Programming (OOP)
 - **Design Patterns**: Service Layer, Repository Pattern, Factory Pattern
+
+## ✅ Completion Rules (Access Control)
+- A module is considered fully completed when:
+  - Knowledge check score ≥ 80% (configurable) AND
+  - Simulation completed when the module includes one (Modules 2–5)
+- Modules unlock sequentially. Final Assessment unlocks only after all modules are completed.
 
 ## 🚀 Getting Started
 
@@ -160,6 +167,11 @@ The application automatically creates the database and loads content on first ru
 python reload_modules.py
 ```
 
+## 🧠 Content, Questions, and Simulations
+- Edit learning content and questions in `learning_modules/`. Each module exposes content and a question factory.
+- Simulations live in `simulations/` with a shared `BaseSimulation` API and per‑type logic.
+- The app bootstraps modules and questions on first run and can be reloaded via `reload_modules.py`.
+
 ## 📋 Learning Modules
 
 1. **Introduction to Social Engineering**
@@ -197,6 +209,19 @@ python reload_modules.py
    - Response procedures
    - Reporting protocols
 
+## 🧩 Architecture Notes
+- `app.py` defines routes and wires services to templates.
+- `data_models/` contains SQLAlchemy models (Users, Modules, Progress, Assessments, Simulations).
+- `business_services/` encapsulates domain logic (assessment creation/validation, progress rules, analytics, simulations orchestration, user access checks).
+- `templates/` are presentation-only; heavy logic is in services. The dashboard is fed by the `/dashboard` route.
+
+## 📊 Dashboard Metrics
+- Modules Completed vs Total Modules
+- Simulations Completed
+- Average Score (assessments)
+- Time Spent (aggregated from progress)
+- Final Assessment readiness, survey/certificate status, recent activities
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -221,6 +246,35 @@ The application includes configuration for:
 - **Render**: Configured for cloud deployment
 - **Docker**: Can be containerized for deployment
 
+### Render + GitHub
+- The repository `main` branch is deployable to Render. A force‑push will roll the environment forward.
+
+## 🖼️ Screenshots
+
+Place screenshots under `static/screenshots/` and they will render below. Suggested filenames are provided.
+
+| Dashboard | Module | Assessment |
+| --- | --- | --- |
+| ![Dashboard](static/screenshots/dashboard.png) | ![Module](static/screenshots/module.png) | ![Assessment](static/screenshots/assessment.png) |
+
+| Simulation | Final Assessment | Certificate |
+| --- | --- | --- |
+| ![Simulation](static/screenshots/simulation.png) | ![Final](static/screenshots/final_assessment.png) | ![Certificate](static/screenshots/certificate.png) |
+
+> Tip: Capture at 1440×900 or similar for crisp previews.
+
+## ▶️ Quickstart GIF
+
+Add a short walkthrough GIF at `static/screenshots/quickstart.gif` to showcase:
+1. Login → Dashboard
+2. Open Module → Take Knowledge Check (submit)
+3. Run a Simulation → Submit
+4. Final Assessment info page
+
+Embed (auto‑renders when the file exists):
+
+![Quickstart](static/screenshots/quickstart.gif)
+
 ## 📊 API Endpoints
 
 ### Authentication
@@ -242,6 +296,10 @@ The application includes configuration for:
 - `POST /update_progress` - Update user progress
 - `GET /profile` - User profile
 - `POST /update_profile` - Update profile
+
+## 🧪 Testing & Quality
+- Service‑level boundaries make business logic testable in isolation.
+- Templates avoid DB queries; data should be provided via routes.
 
 ## 🤝 Contributing
 
@@ -270,4 +328,4 @@ For support and questions:
 
 ---
 
-**Note**: This application is designed for educational purposes to raise awareness about social engineering attacks and prevention strategies.
+**Note**: This application is for educational use to raise awareness about social engineering attacks and prevention strategies.
