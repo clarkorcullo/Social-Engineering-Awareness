@@ -13,6 +13,10 @@ Key principles:
 - Content is code-first and versioned in `learning_modules/`.
 - Simulations follow a Base → Concrete OOP pattern in `simulations/`.
 
+## 🌐 Live Deployment
+
+This project is live at [social-engineering-awareness.onrender.com](https://social-engineering-awareness.onrender.com/).
+
 ## 📁 Project Structure
 
 ```
@@ -249,31 +253,7 @@ The application includes configuration for:
 ### Render + GitHub
 - The repository `main` branch is deployable to Render. A force‑push will roll the environment forward.
 
-## 🖼️ Screenshots
-
-Place screenshots under `static/screenshots/` and they will render below. Suggested filenames are provided.
-
-| Dashboard | Module | Assessment |
-| --- | --- | --- |
-| ![Dashboard](static/screenshots/dashboard.png) | ![Module](static/screenshots/module.png) | ![Assessment](static/screenshots/assessment.png) |
-
-| Simulation | Final Assessment | Certificate |
-| --- | --- | --- |
-| ![Simulation](static/screenshots/simulation.png) | ![Final](static/screenshots/final_assessment.png) | ![Certificate](static/screenshots/certificate.png) |
-
-> Tip: Capture at 1440×900 or similar for crisp previews.
-
-## ▶️ Quickstart GIF
-
-Add a short walkthrough GIF at `static/screenshots/quickstart.gif` to showcase:
-1. Login → Dashboard
-2. Open Module → Take Knowledge Check (submit)
-3. Run a Simulation → Submit
-4. Final Assessment info page
-
-Embed (auto‑renders when the file exists):
-
-![Quickstart](static/screenshots/quickstart.gif)
+<!-- Screenshots/GIF section removed to avoid 404s on GitHub when files are absent. -->
 
 ## 📊 API Endpoints
 
