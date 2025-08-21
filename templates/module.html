@@ -71,15 +71,24 @@
                             </div>
                         {% endif %}
                         
-                        <!-- Knowledge Check Button - Always show if user has read content -->
-                        <a href="{{ url_for('module_knowledge_check', module_id=module.id) }}" class="btn btn-warning btn-lg">
-                            <i class="fas fa-question-circle me-2"></i>
-                            {% if knowledge_check_score > 0 %}
-                                Retake Knowledge Check
-                            {% else %}
-                                Take Knowledge Check
-                            {% endif %}
-                        </a>
+                        <!-- Knowledge Check Button - Different for regular modules vs final assessment -->
+                        {% if module.id == 8 %}
+                            <!-- Final Assessment -->
+                            <a href="{{ url_for('final_assessment') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                Take Final Assessment
+                            </a>
+                        {% else %}
+                            <!-- Regular Module Knowledge Check -->
+                            <a href="{{ url_for('assessment', module_id=module.id) }}" class="btn btn-warning btn-lg">
+                                <i class="fas fa-question-circle me-2"></i>
+                                {% if knowledge_check_score > 0 %}
+                                    Retake Knowledge Check
+                                {% else %}
+                                    Take Knowledge Check
+                                {% endif %}
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -147,22 +156,41 @@
                     </div>
                 </div>
 
+                <!-- Simulation Card (if available) -->
+                {% if module.has_simulation %}
+                <div class="sidebar-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-gamepad me-2"></i>Interactive Simulation
+                    </h5>
+                    <div class="simulation-section">
+                        <p class="text-muted small mb-3">
+                            Test your knowledge with a realistic {{ module.simulation_type }} scenario.
+                        </p>
+                        <a href="{{ url_for('simulation', simulation_type=module.simulation_type) }}" class="btn btn-info w-100">
+                            <i class="fas fa-play me-2"></i>Start Simulation
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                    </div>
+                </div>
+
                 <!-- Navigation Card -->
                 <div class="sidebar-card">
                     <h5 class="card-title">
                         <i class="fas fa-compass me-2"></i>Navigation
                     </h5>
                     <div class="nav-buttons">
-                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100 mb-2">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100 mb-3">
                             <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
                         </a>
                         {% if module.order > 1 %}
-                        <a href="{{ url_for('module', module_id=module.order-1) }}" class="btn btn-outline-primary w-100 mb-2">
+                        <a href="{{ url_for('module', module_id=module.order-1) }}" class="btn btn-outline-primary w-100 mb-3">
                             <i class="fas fa-chevron-left me-2"></i>Previous Module
                         </a>
                         {% endif %}
                         {% if module.order < 8 %}
-                        <a href="{{ url_for('module', module_id=module.order+1) }}" class="btn btn-outline-primary w-100">
+                        <a href="{{ url_for('module', module_id=module.order+1) }}" class="btn btn-outline-primary w-100 mb-0">
                             <i class="fas fa-chevron-right me-2"></i>Next Module
                         </a>
                         {% endif %}
@@ -861,14 +889,17 @@
 /* Sidebar Styles */
 .module-sidebar {
     position: sticky;
-    top: 100px;
+    top: 120px;
+    z-index: 100;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
 }
 
 .sidebar-card {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
     padding: 25px;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.08);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
@@ -939,6 +970,49 @@
 
 .nav-buttons {
     space-y: 10px;
+}
+
+/* Additional spacing for simulation and navigation sections */
+.simulation-section {
+    margin-bottom: 15px;
+}
+
+/* Ensure proper spacing between sidebar cards */
+.sidebar-card + .sidebar-card {
+    margin-top: 15px;
+}
+
+/* Prevent overlapping during scroll */
+.sidebar-card {
+    position: relative;
+    z-index: 1;
+}
+
+.sidebar-card:hover {
+    z-index: 2;
+    transform: translateY(-2px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+/* Smooth scrolling for sidebar */
+.module-sidebar {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.3) transparent;
+}
+
+.module-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.module-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.module-sidebar::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 3px;
 }
 
 /* Responsive Design */
@@ -1046,6 +1120,38 @@ document.getElementById('markComplete')?.addEventListener('click', function() {
         .catch(error => {
             console.error('Error:', error);
             alert('Error updating progress. Please try again.');
+        });
+    }
+});
+
+// Handle scroll events to prevent overlapping
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.module-sidebar');
+    const sidebarCards = document.querySelectorAll('.sidebar-card');
+    
+    if (sidebar) {
+        // Add scroll event listener to handle overlapping
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const sidebarTop = sidebar.offsetTop;
+            const sidebarHeight = sidebar.offsetHeight;
+            const windowHeight = window.innerHeight;
+            
+            // Adjust spacing based on scroll position
+            sidebarCards.forEach((card, index) => {
+                if (scrollTop > sidebarTop && scrollTop < sidebarTop + sidebarHeight) {
+                    card.style.marginBottom = '25px';
+                } else {
+                    card.style.marginBottom = '30px';
+                }
+            });
+        });
+        
+        // Ensure proper initial spacing
+        sidebarCards.forEach((card, index) => {
+            if (index < sidebarCards.length - 1) {
+                card.style.marginBottom = '30px';
+            }
         });
     }
 });

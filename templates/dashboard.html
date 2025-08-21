@@ -109,11 +109,11 @@
                         <div class="col-md-4 text-end">
                             <div class="d-flex justify-content-end">
                                 <div class="text-center me-4">
-                                    <h4 class="mb-0">{{ current_user.modules_completed }}</h4>
+                                    <h4 class="mb-0">{{ completed_modules }}</h4>
                                     <small>Modules Completed</small>
                                 </div>
                                 <div class="text-center">
-                                    <h4 class="mb-0">{{ total_score }}</h4>
+                                    <h4 class="mb-0">{{ user_stats.total_score if user_stats else 0 }}</h4>
                                     <small>Total Score</small>
                                 </div>
                             </div>
@@ -133,10 +133,10 @@
                     <h5 class="card-title">Learning Progress</h5>
                     <div class="progress mb-2">
                         <div class="progress-bar" role="progressbar" 
-                             style="width: {{ (completed_modules / 8) * 100 }}%">
+                             style="width: {{ (completed_modules / total_modules) * 100 }}%">
                         </div>
                     </div>
-                    <p class="card-text mt-auto">{{ completed_modules }} of 8 modules completed</p>
+                    <p class="card-text mt-auto">{{ completed_modules }} of {{ total_modules }} modules completed</p>
                 </div>
             </div>
         </div>
@@ -146,7 +146,7 @@
                 <div class="card-body d-flex flex-column">
                     <i class="fas fa-gamepad fa-2x text-warning mb-2"></i>
                     <h5 class="card-title">Simulations</h5>
-                    <h3 class="text-warning">{{ current_user.simulations_completed }}</h3>
+                    <h3 class="text-warning">{{ user_stats.simulations_completed if user_stats else 0 }}</h3>
                     <p class="card-text mt-auto">Simulations completed</p>
                 </div>
             </div>
@@ -168,7 +168,7 @@
                 <div class="card-body d-flex flex-column">
                     <i class="fas fa-clock fa-2x text-info mb-2"></i>
                     <h5 class="card-title">Time Spent</h5>
-                    <h3 class="text-info">{{ current_user.modules_completed * 30 }} min</h3>
+                    <h3 class="text-info">{{ total_time_spent }} min</h3>
                     <p class="card-text mt-auto">Total learning time</p>
                 </div>
             </div>
@@ -191,20 +191,20 @@
 
     <!-- Learning Modules Cards -->
     <div class="row mb-4" style="margin-top: 2rem;">
-        {% for i in range(1, 9) %}
+        {% for i in range(1, total_modules + 1) %}
         <div class="col-md-6 col-lg-3 mb-3">
             {% if accessible_modules[i-1] %}
                 <a href="{{ url_for('module', module_id=i) }}" class="text-decoration-none">
             {% endif %}
             <div class="card module-card {% if accessible_modules[i-1] %}
-                {% if i <= completed_modules %}completed{% elif i == completed_modules + 1 %}current{% else %}locked{% endif %}
+                {% if i in completed_module_ids %}completed{% elif i == completed_modules + 1 %}current{% else %}locked{% endif %}
             {% else %}locked{% endif %} h-100 {% if accessible_modules[i-1] %}clickable-module{% endif %}">
                 <div class="card-body d-flex flex-column p-3">
                     <!-- Header: Module number and status icon -->
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <h6 class="card-title mb-0 fw-bold">Module {{ i }}</h6>
                         {% if accessible_modules[i-1] %}
-                            {% if i <= completed_modules %}
+                            {% if i in completed_module_ids %}
                                 <i class="fas fa-check-circle text-success"></i>
                             {% else %}
                                 <i class="fas fa-play-circle text-warning"></i>
@@ -260,17 +260,17 @@
                     <div class="d-flex justify-content-between align-items-center mt-auto">
                         <span class="status-badge 
                             {% if accessible_modules[i-1] %}
-                                {% if i <= completed_modules %}completed
+                                {% if i in completed_module_ids %}completed
                                 {% else %}current{% endif %}
                             {% else %}locked{% endif %}">
                             {% if accessible_modules[i-1] %}
-                                {% if i <= completed_modules %}Completed
+                                {% if i in completed_module_ids %}Completed
                                 {% else %}Current{% endif %}
                             {% else %}Locked{% endif %}
                         </span>
                         {% if accessible_modules[i-1] %}
                             <span class="btn btn-sm btn-primary">
-                                {% if i <= completed_modules %}Review{% else %}Start{% endif %}
+                                {% if i in completed_module_ids %}Review{% else %}Start{% endif %}
                             </span>
                         {% else %}
                             <span class="text-muted small">Complete previous modules</span>
@@ -295,9 +295,8 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% set completed_modules = current_user.modules_completed or 0 %}
-                    {% set total_modules = 8 %}
-                    
+                    {# Use values provided by the backend: completed_modules, total_modules #}
+
                     {% if completed_modules >= total_modules %}
                         <div class="alert alert-success">
                             <h6><i class="fas fa-check-circle"></i> Ready for Final Assessment!</h6>
@@ -312,13 +311,13 @@
                             <p class="mb-3">You need to complete all {{ total_modules }} modules before taking the Final Assessment.</p>
                             <div class="progress mb-3" style="height: 25px; background-color: #e9ecef;">
                                 <div class="progress-bar bg-primary" role="progressbar" 
-                                     style="width: {{ (completed_modules / 8) * 100 }}%; font-weight: bold; font-size: 14px; line-height: 25px;">
-                                    <strong>{{ completed_modules }}/8 Modules</strong>
+                                     style="width: {{ (completed_modules / total_modules) * 100 }}%; font-weight: bold; font-size: 14px; line-height: 25px;">
+                                    <strong>{{ completed_modules }}/{{ total_modules }} Modules</strong>
                                 </div>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">{{ total_modules - completed_modules }} modules remaining</small>
-                                <small class="text-primary fw-bold">{{ (completed_modules / 8) * 100 }}% Complete</small>
+                                <small class="text-primary fw-bold">{{ (completed_modules / total_modules) * 100 }}% Complete</small>
                             </div>
                         </div>
                     {% endif %}
@@ -337,16 +336,10 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% set final_passed = false %}
-                    {% if completed_modules >= total_modules %}
-                        {% set final_result = AssessmentResult.query.filter_by(user_id=current_user.id, assessment_type='final_assessment', passed=True).first() %}
-                        {% if final_result %}
-                            {% set final_passed = true %}
-                        {% endif %}
-                    {% endif %}
+                    {# Determine final_passed using context provided by backend #}
+                    {% set final_passed = (final_result is not none) %}
                     
                     {% if final_passed %}
-                        {% set survey_completed = FeedbackSurvey.query.filter_by(user_id=current_user.id).first() %}
                         {% if survey_completed %}
                             <div class="alert alert-success">
                                 <h6><i class="fas fa-check-circle"></i> Survey Completed!</h6>
@@ -385,25 +378,26 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% if recent_simulations %}
+                    {% if recent_activities %}
                         <div class="list-group list-group-flush">
-                            {% for simulation in recent_simulations %}
+                            {% for a in recent_activities %}
                             <div class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-1">{{ simulation.simulation_type.title() }} Simulation</h6>
+                                    <h6 class="mb-1">{{ a.title }}</h6>
                                     <small class="text-muted">
-                                        {{ simulation.completed_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                        {{ a.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
                                     </small>
+                                    {% if a.detail %}
+                                        <div class="small text-muted">{{ a.detail }}</div>
+                                    {% endif %}
                                 </div>
-                                <span class="badge {% if simulation.is_correct %}bg-success{% else %}bg-danger{% endif %}">
-                                    {% if simulation.is_correct %}Correct{% else %}Incorrect{% endif %}
-                                </span>
+                                <span class="badge {{ a.badge_class }}">{{ a.badge_text }}</span>
                             </div>
                             {% endfor %}
                         </div>
                     {% else %}
                         <p class="text-muted text-center py-3">
-                            <i class="fas fa-info-circle"></i> No recent activity. Start your first simulation!
+                            <i class="fas fa-info-circle"></i> No recent activity yet.
                         </p>
                     {% endif %}
                 </div>
@@ -419,7 +413,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('assessment', assessment_type='baseline') }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('assessment', module_id=1) }}" class="btn btn-outline-primary">
                             <i class="fas fa-clipboard-list"></i> Take Assessment
                         </a>
                         <a href="{{ url_for('simulation', simulation_type='phishing') }}" class="btn btn-outline-warning">
