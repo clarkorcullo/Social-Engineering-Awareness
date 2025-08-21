@@ -306,12 +306,13 @@ def register():
                 'year_level': year_level
             }
             
-            user = user_service.create_user(user_data)
-            if user:
-                flash('Registration successful! Please login.', 'success')
-                return redirect(url_for('login'))
-            else:
-                flash('Registration failed. Please check your information.', 'error')
+            try:
+                user = user_service.create_user(user_data)
+                if user:
+                    flash('Registration successful! Please login.', 'success')
+                    return redirect(url_for('login'))
+            except ValueError as ve:
+                flash(str(ve), 'error')
                 
         except ValueError as e:
             flash(str(e), 'error')

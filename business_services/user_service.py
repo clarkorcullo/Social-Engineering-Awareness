@@ -19,38 +19,40 @@ class UserService:
     
     @staticmethod
     def create_user(user_data: Dict[str, Any]) -> Optional[User]:
-        """Create a new user with validation"""
+        """Create a new user with validation. Raises ValueError for validation errors."""
+        # Normalize inputs
+        user_data = {k: (v.strip() if isinstance(v, str) else v) for k, v in user_data.items()}
+        
+        # Validate required fields
+        required_fields = ['username', 'email', 'password', 'full_name', 'specialization', 'year_level']
+        for field in required_fields:
+            if field not in user_data or not user_data[field]:
+                raise ValueError(f"Missing required field: {field}")
+        
+        # Validate email format
+        if not UserService._is_valid_email(user_data['email']):
+            raise ValueError("Invalid email format")
+        
+        # Validate password strength
+        if not UserService._is_valid_password(user_data['password']):
+            raise ValueError("Password does not meet strength requirements")
+        
+        # Check if user already exists
+        if User.get_by_username(user_data['username']):
+            raise ValueError("Username already exists")
+        
+        if User.get_by_email(user_data['email']):
+            raise ValueError("Email already exists")
+        
+        # Create user
         try:
-            # Validate required fields
-            required_fields = ['username', 'email', 'password', 'full_name', 'specialization', 'year_level']
-            for field in required_fields:
-                if field not in user_data or not user_data[field]:
-                    raise ValueError(f"Missing required field: {field}")
-            
-            # Validate email format
-            if not UserService._is_valid_email(user_data['email']):
-                raise ValueError("Invalid email format")
-            
-            # Validate password strength
-            if not UserService._is_valid_password(user_data['password']):
-                raise ValueError("Password does not meet strength requirements")
-            
-            # Check if user already exists
-            if User.get_by_username(user_data['username']):
-                raise ValueError("Username already exists")
-            
-            if User.get_by_email(user_data['email']):
-                raise ValueError("Email already exists")
-            
-            # Create user
             user = User(**user_data)
             if user.save():
                 return user
-            return None
-            
+            raise ValueError("Failed to save user")
         except Exception as e:
-            print(f"Error creating user: {e}")
-            return None
+            # Surface precise reason to caller (route will flash this)
+            raise ValueError(str(e))
     
     @staticmethod
     def authenticate_user(username: str, password: str) -> Optional[User]:
