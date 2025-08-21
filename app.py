@@ -60,6 +60,13 @@ def load_user(user_id):
     """Load user for Flask-Login"""
     return User.get_by_id(int(user_id))
 
+# Ensure database is initialized when running under WSGI servers (e.g., Render)
+try:
+    with app.app_context():
+        init_database()
+except Exception as e:
+    print(f"❌ Database init on import failed: {e}")
+
 # Application Factory Pattern
 def create_app():
     """Application factory for better testing and configuration"""
