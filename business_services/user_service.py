@@ -228,7 +228,7 @@ class UserService:
     @staticmethod
     def _is_valid_password(password: str) -> bool:
         """Validate password strength"""
-        if len(password) < 8:
+        if len(password) < 12:
             return False
         if not re.search(r'[A-Z]', password):
             return False

@@ -92,7 +92,7 @@ def create_default_data():
             admin_data = {
                 'username': 'administrator',
                 'email': os.environ.get('ADMIN_EMAIL', 'admin@mmdc.edu.ph'),
-                'password': os.environ.get('ADMIN_PASSWORD', 'Admin123!@#'),
+                'password': os.environ.get('ADMIN_PASSWORD', 'Admin123!@#2025'),
                 'full_name': 'System Administrator',
                 'specialization': 'Information Technology',
                 'year_level': '4th Year'
@@ -101,6 +101,16 @@ def create_default_data():
             print("✅ Admin user created (administrator)")
         else:
             print("✅ Admin user already exists (administrator)")
+
+        # If ADMIN_PASSWORD is set and differs, reset admin password at boot
+        desired_pw = os.environ.get('ADMIN_PASSWORD')
+        if desired_pw and admin_user:
+            try:
+                if admin_user.set_password(desired_pw):
+                    admin_user.save()
+                    print("✅ Admin password refreshed from ADMIN_PASSWORD env")
+            except Exception as pw_e:
+                print(f"⚠️ Could not refresh admin password: {pw_e}")
         
         # Create modules if they don't exist
         if Module.count() == 0:

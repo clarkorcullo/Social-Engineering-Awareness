@@ -81,7 +81,7 @@ class User(UserMixin, BaseModel, TimestampMixin):
     
     def _validate_password(self, password: str) -> bool:
         """Validate password strength"""
-        if len(password) < 8:
+        if len(password) < 12:
             return False
         if not re.search(r'[A-Z]', password):
             return False
