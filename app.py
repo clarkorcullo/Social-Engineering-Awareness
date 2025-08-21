@@ -5,6 +5,7 @@ Main application file using OOP principles and design patterns
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 from datetime import datetime, timedelta
 import random
@@ -20,7 +21,8 @@ from helper_utilities.data_structures import *
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+# Use environment secret in production; fallback for local dev
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 
 # Database configuration
 if os.environ.get('RENDER'):
@@ -30,6 +32,17 @@ else:
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Reverse proxy and cookie settings for Render/HTTPS
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+if os.environ.get('RENDER'):
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['REMEMBER_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+    app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Initialize extensions
 db.init_app(app)
@@ -66,21 +79,21 @@ def init_database():
 def create_default_data():
     """Create default data if it doesn't exist"""
     try:
-        # Create admin user if not exists
-        admin_user = User.get_by_username('admin')
+        # Create default admin if not exists (use 'administrator' with strong password)
+        admin_user = User.get_by_username('administrator')
         if not admin_user:
             admin_data = {
-                'username': 'admin',
-                'email': 'admin@mmdc.edu.ph',
-                'password': 'Admin123!',
+                'username': 'administrator',
+                'email': os.environ.get('ADMIN_EMAIL', 'admin@mmdc.edu.ph'),
+                'password': os.environ.get('ADMIN_PASSWORD', 'Admin123!@#'),
                 'full_name': 'System Administrator',
                 'specialization': 'Information Technology',
                 'year_level': '4th Year'
             }
             user_service.create_user(admin_data)
-            print("✅ Admin user created")
+            print("✅ Admin user created (administrator)")
         else:
-            print("✅ Admin user already exists")
+            print("✅ Admin user already exists (administrator)")
         
         # Create modules if they don't exist
         if Module.count() == 0:
