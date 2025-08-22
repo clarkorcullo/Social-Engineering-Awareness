@@ -7,42 +7,64 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os
+import sys
+import logging
 from datetime import datetime, timedelta
 import random
 import json
 import secrets
 
+# Configure logging
+def setup_logging():
+    """Setup logging configuration"""
+    log_level = os.environ.get('LOG_LEVEL', 'INFO')
+    log_file = os.environ.get('LOG_FILE', 'app.log')
+    
+    # Create formatter that handles Unicode properly
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    
+    # Console handler with UTF-8 encoding
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    
+    # File handler with UTF-8 encoding
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setFormatter(formatter)
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, log_level.upper()))
+    root_logger.addHandler(console_handler)
+    root_logger.addHandler(file_handler)
+    
+    return logging.getLogger(__name__)
+
+logger = setup_logging()
+
 # Import our OOP components
 from data_models.base_models import db
-from data_models import *
-from data_models.user_models import User, PasswordResetToken
-from business_services import *
+from data_models import (
+    User, PasswordResetToken, Module, KnowledgeCheckQuestion, 
+    FinalAssessmentQuestion, UserProgress, AssessmentResult, 
+    SimulationResult, FeedbackSurvey
+)
+from business_services import (
+    UserService, AssessmentService, SimulationService
+)
 from helper_utilities.data_structures import *
+
+# Import configuration
+from config import config
 
 # Initialize Flask app
 app = Flask(__name__)
-# Use environment secret in production; fallback for local dev
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 
-# Database configuration
-if os.environ.get('RENDER'):
-    db_path = '/tmp/social_engineering_awareness.db'
-else:
-    db_path = 'social_engineering_awareness.db'
-
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Load configuration
+config_name = os.environ.get('FLASK_ENV', 'production')
+app.config.from_object(config[config_name])
 
 # Reverse proxy and cookie settings for Render/HTTPS
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-if os.environ.get('RENDER'):
-    app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['REMEMBER_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['REMEMBER_COOKIE_HTTPONLY'] = True
-    app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Initialize extensions
 db.init_app(app)
@@ -55,33 +77,15 @@ user_service = UserService()
 assessment_service = AssessmentService()
 simulation_service = SimulationService()
 
-@login_manager.user_loader
-def load_user(user_id):
-    """Load user for Flask-Login"""
-    return User.get_by_id(int(user_id))
-
-# Ensure database is initialized when running under WSGI servers (e.g., Render)
-try:
-    with app.app_context():
-        init_database()
-except Exception as e:
-    print(f"❌ Database init on import failed: {e}")
-
-# Application Factory Pattern
-def create_app():
-    """Application factory for better testing and configuration"""
-    with app.app_context():
-        init_database()
-    return app
-
 def init_database():
     """Initialize database with all models"""
     try:
         db.create_all()
         create_default_data()
-        print("✅ Database initialized successfully")
+        logger.info("[SUCCESS] Database initialized successfully")
     except Exception as e:
-        print(f"❌ Database initialization error: {e}")
+        logger.error(f"[ERROR] Database initialization error: {e}")
+        raise
 
 def create_default_data():
     """Create default data if it doesn't exist"""
@@ -89,18 +93,24 @@ def create_default_data():
         # Create default admin if not exists (use 'administrator' with strong password)
         admin_user = User.get_by_username('administrator')
         if not admin_user:
-            admin_data = {
-                'username': 'administrator',
-                'email': os.environ.get('ADMIN_EMAIL', 'admin@mmdc.edu.ph'),
-                'password': os.environ.get('ADMIN_PASSWORD', 'Admin123!@#2025'),
-                'full_name': 'System Administrator',
-                'specialization': 'Information Technology',
-                'year_level': '4th Year'
-            }
-            user_service.create_user(admin_data)
-            print("✅ Admin user created (administrator)")
+            try:
+                admin_data = {
+                    'username': app.config.get('DEFAULT_ADMIN_USERNAME', 'administrator'),
+                    'email': app.config.get('DEFAULT_ADMIN_EMAIL', 'admin@mmdc.edu.ph'),
+                    'password': app.config.get('DEFAULT_ADMIN_PASSWORD', 'Admin123!@#2025'),
+                    'full_name': 'System Administrator',
+                    'specialization': 'Information Technology',
+                    'year_level': '4th Year'
+                }
+                user_service.create_user(admin_data)
+                logger.info("[SUCCESS] Admin user created (administrator)")
+            except ValueError as ve:
+                if "already exists" in str(ve):
+                    logger.info("[SUCCESS] Admin user already exists (administrator)")
+                else:
+                    logger.warning(f"[WARNING] Admin user creation issue: {ve}")
         else:
-            print("✅ Admin user already exists (administrator)")
+            logger.info("[SUCCESS] Admin user already exists (administrator)")
 
         # If ADMIN_PASSWORD is set and differs, reset admin password at boot
         desired_pw = os.environ.get('ADMIN_PASSWORD')
@@ -108,26 +118,50 @@ def create_default_data():
             try:
                 if admin_user.set_password(desired_pw):
                     admin_user.save()
-                    print("✅ Admin password refreshed from ADMIN_PASSWORD env")
+                    logger.info("[SUCCESS] Admin password refreshed from ADMIN_PASSWORD env")
             except Exception as pw_e:
-                print(f"⚠️ Could not refresh admin password: {pw_e}")
+                logger.warning(f"[WARNING] Could not refresh admin password: {pw_e}")
         
         # Create modules if they don't exist
         if Module.count() == 0:
             create_default_modules()
-            print("✅ Default modules created")
+            logger.info("[SUCCESS] Default modules created")
         else:
-            print("✅ Modules already exist")
+            logger.info("[SUCCESS] Modules already exist")
         
         # Create questions if they don't exist
         if KnowledgeCheckQuestion.count() == 0:
             create_default_questions()
-            print("✅ Default questions created")
+            logger.info("[SUCCESS] Default questions created")
         else:
-            print("✅ Questions already exist")
+            logger.info("[SUCCESS] Questions already exist")
             
     except Exception as e:
-        print(f"❌ Error creating default data: {e}")
+        logger.error(f"[ERROR] Error creating default data: {e}")
+        raise
+
+@login_manager.user_loader
+def load_user(user_id):
+    """Load user for Flask-Login"""
+    try:
+        return User.get_by_id(int(user_id))
+    except Exception as e:
+        logger.error(f"Error loading user {user_id}: {e}")
+        return None
+
+# Ensure database is initialized when running under WSGI servers (e.g., Render)
+try:
+    with app.app_context():
+        init_database()
+except Exception as e:
+    logger.error(f"[ERROR] Database init on import failed: {e}")
+
+# Application Factory Pattern
+def create_app():
+    """Application factory for better testing and configuration"""
+    with app.app_context():
+        init_database()
+    return app
 
 def create_default_modules():
     """Create default learning modules with content from modules folder"""
@@ -161,12 +195,12 @@ def create_default_modules():
             # Create and save module
             module = Module(**module_data)
             if module.save():
-                print(f"✅ Created module {i}: {content_data['title']}")
+                logger.info(f"[SUCCESS] Created module {i}: {content_data['title']}")
             else:
-                print(f"❌ Failed to create module {i}")
+                logger.warning(f"[ERROR] Failed to create module {i}")
                 
     except Exception as e:
-        print(f"❌ Error creating modules: {e}")
+        logger.error(f"[ERROR] Error creating modules: {e}")
         # Fallback to basic modules if import fails
         modules_data = [
             {
@@ -254,12 +288,12 @@ def create_default_questions():
                 # Create and save question
                 question = KnowledgeCheckQuestion(**question_data)
                 if question.save():
-                    print(f"✅ Created question for module {module_id}")
+                    logger.info(f"[SUCCESS] Created question for module {module_id}")
                 else:
-                    print(f"❌ Failed to create question for module {module_id}")
+                    logger.warning(f"[ERROR] Failed to create question for module {module_id}")
                     
     except Exception as e:
-        print(f"❌ Error creating questions: {e}")
+        logger.error(f"[ERROR] Error creating questions: {e}")
         # Fallback to basic questions if import fails
         questions_data = [
             {
@@ -287,6 +321,7 @@ def index():
         return render_template('index.html')
     except Exception as e:
         flash(f"Error loading page: {e}", 'error')
+        logger.error(f"Error loading index page: {e}")
         return redirect(url_for('login'))
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -306,11 +341,13 @@ def register():
             # Validate required fields
             if not all([username, email, password, confirm_password, full_name, specialization, year_level]):
                 flash('All fields are required.', 'error')
+                logger.warning(f"Registration failed: Missing required fields for user {username}")
                 return render_template('register.html', form_data=request.form)
             
             # Validate password confirmation
             if password != confirm_password:
                 flash('Passwords do not match.', 'error')
+                logger.warning(f"Registration failed: Password mismatch for user {username}")
                 return render_template('register.html', form_data=request.form)
             
             # Create user data
@@ -327,14 +364,18 @@ def register():
                 user = user_service.create_user(user_data)
                 if user:
                     flash('Registration successful! Please login.', 'success')
+                    logger.info(f"User {username} registered successfully")
                     return redirect(url_for('login'))
             except ValueError as ve:
                 flash(str(ve), 'error')
+                logger.warning(f"Registration failed for user {username}: {ve}")
                 
         except ValueError as e:
             flash(str(e), 'error')
+            logger.error(f"Registration failed: {e}")
         except Exception as e:
             flash(f'Registration error: {e}', 'error')
+            logger.error(f"Registration failed: {e}")
     
     return render_template('register.html')
 
@@ -350,12 +391,15 @@ def login():
             if user:
                 login_user(user)
                 flash('Login successful!', 'success')
+                logger.info(f"User {username} logged in successfully")
                 return redirect(url_for('dashboard'))
             else:
                 flash('Invalid username or password.', 'error')
+                logger.warning(f"Login failed for user {username}: Invalid credentials")
                 
         except Exception as e:
             flash(f'Login error: {e}', 'error')
+            logger.error(f"Login failed: {e}")
     
     return render_template('login.html')
 
@@ -365,6 +409,7 @@ def logout():
     """User logout route"""
     logout_user()
     flash('You have been logged out.', 'info')
+    logger.info(f"User {current_user.username} logged out")
     return redirect(url_for('index'))
 
 @app.route('/dashboard')
@@ -518,6 +563,7 @@ def dashboard():
                              total_time_spent=total_time_spent)
     except Exception as e:
         flash(f'Error loading dashboard: {e}', 'error')
+        logger.error(f"Error loading dashboard: {e}")
         return redirect(url_for('index'))
 
 @app.route('/module/<int:module_id>')
@@ -528,6 +574,7 @@ def module(module_id):
         module_obj = Module.get_by_id(module_id)
         if not module_obj:
             flash('Module not found.', 'error')
+            logger.warning(f"Module {module_id} not found")
             return redirect(url_for('dashboard'))
             
         # Check if user can access this module
@@ -539,6 +586,7 @@ def module(module_id):
             previous_module_completed = user_service.is_module_fully_completed(current_user.id, module_id - 1)
             if not previous_module_completed:
                 flash('You must complete the previous module before accessing this one.', 'warning')
+                logger.warning(f"User {current_user.username} attempted to access module {module_id} without completing module {module_id - 1}")
                 return redirect(url_for('dashboard'))
         
         # Get user progress for this module
@@ -570,6 +618,7 @@ def module(module_id):
                              knowledge_check_score=knowledge_check_score)
     except Exception as e:
         flash(f'Error loading module: {e}', 'error')
+        logger.error(f"Error loading module {module_id}: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/assessment/<int:module_id>')
@@ -580,6 +629,7 @@ def assessment(module_id):
         module_obj = Module.get_by_id(module_id)
         if not module_obj:
             flash('Module not found.', 'error')
+            logger.warning(f"Module {module_id} not found for assessment")
             return redirect(url_for('dashboard'))
         
         # Check if user can access this module
@@ -591,6 +641,7 @@ def assessment(module_id):
             previous_module_completed = user_service.is_module_fully_completed(current_user.id, module_id - 1)
             if not previous_module_completed:
                 flash('You must complete the previous module before taking this assessment.', 'warning')
+                logger.warning(f"User {current_user.username} attempted to take assessment for module {module_id} without completing module {module_id - 1}")
                 return redirect(url_for('dashboard'))
         
         # Create assessment using service
@@ -598,6 +649,7 @@ def assessment(module_id):
         
         if not questions:
             flash('No questions available for this module.', 'error')
+            logger.warning(f"No questions found for module {module_id} for assessment")
             return redirect(url_for('module', module_id=module_id))
         
         return render_template('assessment_simple.html',
@@ -605,6 +657,7 @@ def assessment(module_id):
                              questions=questions)
     except Exception as e:
         flash(f'Error loading assessment: {e}', 'error')
+        logger.error(f"Error loading assessment for module {module_id}: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/submit_assessment/<int:module_id>', methods=['POST'])
@@ -625,6 +678,7 @@ def submit_assessment(module_id):
         # Validate answers
         if not assessment_service.validate_assessment_answers(questions, user_answers):
             flash('Please answer all questions.', 'error')
+            logger.warning(f"Assessment submission failed for module {module_id}: Missing answers")
             return redirect(url_for('assessment', module_id=module_id))
         
         # Grade assessment
@@ -656,6 +710,7 @@ def submit_assessment(module_id):
         
     except Exception as e:
         flash(f'Error submitting assessment: {e}', 'error')
+        logger.error(f"Error submitting assessment for module {module_id}: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/profile')
@@ -666,6 +721,7 @@ def profile():
         return render_template('profile.html', user=current_user)
     except Exception as e:
         flash(f'Error loading profile: {e}', 'error')
+        logger.error(f"Error loading profile for user {current_user.username}: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/update_profile', methods=['POST'])
@@ -682,13 +738,17 @@ def update_profile():
         
         if user_service.update_user_profile(current_user.id, profile_data):
             flash('Profile updated successfully!', 'success')
+            logger.info(f"User {current_user.username} updated profile successfully")
         else:
             flash('Failed to update profile.', 'error')
+            logger.warning(f"Failed to update profile for user {current_user.username}")
             
     except ValueError as e:
         flash(str(e), 'error')
+        logger.warning(f"Profile update failed for user {current_user.username}: {e}")
     except Exception as e:
         flash(f'Error updating profile: {e}', 'error')
+        logger.error(f"Error updating profile for user {current_user.username}: {e}")
     
     return redirect(url_for('profile'))
 
@@ -703,12 +763,16 @@ def forgot_password():
                 token = user.create_password_reset_token()
                 if token:
                     flash('Password reset instructions have been sent to your email.', 'success')
+                    logger.info(f"Password reset token created for user {user.username}")
                 else:
                     flash('Error creating reset token. Please try again.', 'error')
+                    logger.warning(f"Failed to create password reset token for user {user.username}")
             else:
                 flash('Email not found in our system.', 'error')
+                logger.warning(f"Password reset failed: Email {email} not found")
         else:
             flash('Please enter your email address.', 'error')
+            logger.warning("Password reset failed: Email address not provided")
     
     return render_template('forgot_password.html')
 
@@ -719,6 +783,7 @@ def reset_password(token):
     
     if not reset_token:
         flash('Invalid or expired reset token.', 'error')
+        logger.warning(f"Password reset failed: Invalid or expired token {token}")
         return redirect(url_for('login'))
     
     if request.method == 'POST':
@@ -727,16 +792,20 @@ def reset_password(token):
         
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
+            logger.warning(f"Password reset failed for user {reset_token.user.username}: Password mismatch")
         elif len(password) < 8:
             flash('Password must be at least 8 characters long.', 'error')
+            logger.warning(f"Password reset failed for user {reset_token.user.username}: Password too short")
         else:
             user = User.query.get(reset_token.user_id)
             if user and user.set_password(password):
                 reset_token.mark_as_used()
                 flash('Password has been reset successfully!', 'success')
+                logger.info(f"Password reset successful for user {user.username}")
                 return redirect(url_for('login'))
             else:
                 flash('Error resetting password. Please try again.', 'error')
+                logger.warning(f"Password reset failed for user {user.username}: Error resetting password")
     
     return render_template('reset_password.html', token=token)
 
@@ -759,6 +828,7 @@ def final_assessment():
                              total_modules=total_modules)
     except Exception as e:
         flash(f'Error loading final assessment: {e}', 'error')
+        logger.error(f"Error loading final assessment: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/final_assessment_questions')
@@ -776,6 +846,7 @@ def final_assessment_questions():
         
         if completed_modules < total_modules:
             flash('You must complete all modules before taking the final assessment.', 'warning')
+            logger.warning(f"User {current_user.username} attempted to take final assessment without completing all modules")
             return redirect(url_for('dashboard'))
         
         # Get final assessment questions
@@ -783,11 +854,13 @@ def final_assessment_questions():
         
         if not questions:
             flash('No final assessment questions available.', 'error')
+            logger.warning(f"No final assessment questions found for user {current_user.username}")
             return redirect(url_for('dashboard'))
         
         return render_template('final_assessment_questions.html', questions=questions)
     except Exception as e:
         flash(f'Error loading final assessment questions: {e}', 'error')
+        logger.error(f"Error loading final assessment questions: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/submit_final_assessment', methods=['POST'])
@@ -808,6 +881,7 @@ def submit_final_assessment():
         # Validate answers
         if not assessment_service.validate_assessment_answers(questions, user_answers):
             flash('Please answer all questions.', 'error')
+            logger.warning(f"Final assessment submission failed for user {current_user.username}: Missing answers")
             return redirect(url_for('final_assessment'))
         
         # Grade assessment
@@ -839,6 +913,7 @@ def submit_final_assessment():
         
     except Exception as e:
         flash(f'Error submitting final assessment: {e}', 'error')
+        logger.error(f"Error submitting final assessment for user {current_user.username}: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/simulation/<simulation_type>')
@@ -850,6 +925,7 @@ def simulation(simulation_type):
         valid_types = ['phishing', 'pretexting', 'baiting', 'quid_pro_quo']
         if simulation_type not in valid_types:
             flash('Invalid simulation type.', 'error')
+            logger.warning(f"Invalid simulation type {simulation_type} requested by user {current_user.username}")
             return redirect(url_for('dashboard'))
         
         # Get simulation content
@@ -860,6 +936,7 @@ def simulation(simulation_type):
                              content=simulation_content)
     except Exception as e:
         flash(f'Error loading simulation: {e}', 'error')
+        logger.error(f"Error loading simulation {simulation_type} for user {current_user.username}: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/submit_simulation/<simulation_type>', methods=['POST'])
@@ -871,6 +948,7 @@ def submit_simulation(simulation_type):
         valid_types = ['phishing', 'pretexting', 'baiting', 'quid_pro_quo']
         if simulation_type not in valid_types:
             flash('Invalid simulation type.', 'error')
+            logger.warning(f"Invalid simulation type {simulation_type} requested by user {current_user.username}")
             return redirect(url_for('dashboard'))
         
         # Get simulation content
@@ -886,6 +964,7 @@ def submit_simulation(simulation_type):
         # Validate answers
         if not simulation_service.validate_simulation_answers(simulation_content, user_answers):
             flash('Please answer all questions.', 'error')
+            logger.warning(f"Simulation submission failed for user {current_user.username}: Missing answers for simulation type {simulation_type}")
             return redirect(url_for('simulation', simulation_type=simulation_type))
         
         # Grade simulation
@@ -916,13 +995,16 @@ def submit_simulation(simulation_type):
         
         if simulation_result:
             flash(f'Simulation completed! Score: {results["score"]}/{results["total_questions"]} ({results["percentage"]:.1f}%)', 'success')
+            logger.info(f"User {current_user.username} completed simulation {simulation_type} successfully")
             return redirect(url_for('dashboard'))
         else:
             flash('Failed to save simulation result.', 'error')
+            logger.warning(f"Failed to save simulation result for user {current_user.username} for simulation type {simulation_type}")
             return redirect(url_for('simulation', simulation_type=simulation_type))
                 
     except Exception as e:
         flash(f'Error submitting simulation: {e}', 'error')
+        logger.error(f"Error submitting simulation {simulation_type} for user {current_user.username}: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/survey')
@@ -939,17 +1021,20 @@ def survey():
         
         if not final_result:
             flash('You must pass the final assessment before taking the survey.', 'warning')
+            logger.warning(f"User {current_user.username} attempted to take survey without passing final assessment")
             return redirect(url_for('dashboard'))
         
         # Check if survey already completed
         existing_survey = FeedbackSurvey.query.filter_by(user_id=current_user.id).first()
         if existing_survey:
             flash('You have already completed the survey.', 'info')
+            logger.info(f"User {current_user.username} attempted to complete survey again")
             return redirect(url_for('dashboard'))
         
         return render_template('survey.html')
     except Exception as e:
         flash(f'Error loading survey: {e}', 'error')
+        logger.error(f"Error loading survey for user {current_user.username}: {e}")
         return redirect(url_for('dashboard'))
 
 @app.route('/submit_survey', methods=['POST'])
@@ -971,13 +1056,16 @@ def submit_survey():
         survey = FeedbackSurvey(**survey_data)
         if survey.save():
             flash('Survey submitted successfully!', 'success')
+            logger.info(f"User {current_user.username} submitted survey successfully")
             return redirect(url_for('dashboard'))
         else:
             flash('Failed to submit survey.', 'error')
+            logger.warning(f"Failed to submit survey for user {current_user.username}")
             return redirect(url_for('survey'))
         
     except Exception as e:
         flash(f'Error submitting survey: {e}', 'error')
+        logger.error(f"Error submitting survey for user {current_user.username}: {e}")
         return redirect(url_for('survey'))
 
 @app.route('/update_progress', methods=['POST'])
@@ -1037,36 +1125,74 @@ def certificate():
         
         if not final_result:
             flash('You must pass the final assessment to generate a certificate.', 'warning')
+            logger.warning(f"User {current_user.username} attempted to generate certificate without passing final assessment")
             return redirect(url_for('dashboard'))
         
         if not survey_completed:
             flash('You must complete the survey to generate a certificate.', 'warning')
+            logger.warning(f"User {current_user.username} attempted to generate certificate without completing survey")
             return redirect(url_for('dashboard'))
         
         return render_template('certificate.html', user=current_user)
     except Exception as e:
         flash(f'Error generating certificate: {e}', 'error')
+        logger.error(f"Error generating certificate for user {current_user.username}: {e}")
         return redirect(url_for('dashboard'))
 
 # Error handlers
 @app.errorhandler(404)
 def not_found_error(error):
     """Handle 404 errors"""
+    logger.warning(f"404 error: {error}")
     return render_template('404.html'), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors"""
     db.session.rollback()
+    logger.error(f"500 error: {error}")
     return render_template('500.html'), 500
+
+# Health check endpoint
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Check database connection
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'database': 'connected',
+            'version': '1.0.0'
+        }), 200
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return jsonify({
+            'status': 'unhealthy',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e)
+        }), 500
 
 # Main application entry point
 if __name__ == '__main__':
-    print("🚀 Initializing Social Engineering Awareness Program with OOP...")
-    app = create_app()
+    logger.info("[STARTUP] Initializing Social Engineering Awareness Program with OOP...")
     
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') == 'development'
-    
-    print(f"✅ Application ready on port {port}")
-    app.run(debug=debug, host='0.0.0.0', port=port) 
+    try:
+        app = create_app()
+        
+        port = int(os.environ.get('PORT', 5000))
+        debug = os.environ.get('FLASK_ENV') == 'development'
+        
+        logger.info(f"[SUCCESS] Application ready on port {port}")
+        logger.info(f"[INFO] Debug mode: {debug}")
+        logger.info(f"[INFO] Access the application at: http://localhost:{port}")
+        logger.info(f"[INFO] Default admin credentials: {app.config.get('DEFAULT_ADMIN_USERNAME')} / {app.config.get('DEFAULT_ADMIN_PASSWORD')}")
+        logger.info(f"[INFO] Health check available at: http://localhost:{port}/health")
+        
+        app.run(debug=debug, host='0.0.0.0', port=port)
+        
+    except Exception as e:
+        logger.error(f"[ERROR] Failed to start application: {e}")
+        sys.exit(1) 
